@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, ForeignKey, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
@@ -26,6 +26,22 @@ class MealPlan(Base):
     bmr = Column(Integer)
     tdee = Column(Integer)
     plan_json = Column(Text)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class FoodLog(Base):
+    __tablename__ = "food_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    meal_name = Column(String(300), nullable=False)
+    calories = Column(Float, default=0)
+    protein = Column(Float, default=0)
+    carbs = Column(Float, default=0)
+    fats = Column(Float, default=0)
+    fiber = Column(Float, default=0)
+    meal_type = Column(String(50), default="Meal")
+    logged_date = Column(String(20))  # YYYY-MM-DD
+    notes = Column(Text, nullable=True)
+    image_analysis = Column(Text, nullable=True)  # JSON from image analysis
     created_at = Column(DateTime, default=datetime.utcnow)
 
 def init_db():
