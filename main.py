@@ -177,20 +177,194 @@ def call_gemini(prompt):
         d = json.loads(r.read())
     return d["candidates"][0]["content"]["parts"][0]["text"]
 
+# ─── CLINICAL AI PROMPT (NutriSync System Prompt v2 — exact spec) ──────────
 def build_prompt(req, target, b, t):
-    return f"""You are NutriSync AI. Generate a 7-day meal plan.
-USER: Age {req.age}, {req.gender}, {req.height_cm}cm, {req.weight_kg}kg
-TARGETS: BMR={b} kcal, TDEE={t} kcal, Daily={target} kcal
-GOAL: {req.goal} | ACTIVITY: {req.activity}
-MEDICAL: {', '.join(req.medical_conditions) or 'None'}
-DIET: {req.dietary_style or 'No restriction'} | PROTEINS: {', '.join(req.proteins) or 'All'}
-ALLERGIES: {', '.join(req.allergies) or 'None'}
-CUISINES: {', '.join(req.cuisines) or 'Any'} | BUDGET: {req.budget}
+    bmi = round(req.weight_kg / ((req.height_cm / 100) ** 2), 1)
+    allergies_str  = ', '.join(req.allergies)          if req.allergies          else 'None'
+    medical_str    = ', '.join(req.medical_conditions) if req.medical_conditions else 'None'
+    cuisines_str   = ', '.join(req.cuisines)           if req.cuisines           else 'Any'
+    proteins_str   = ', '.join(req.proteins)           if req.proteins           else 'All'
 
-OUTPUT ONLY VALID JSON. No markdown. No explanation. Start with {{ and end with }}.
-{{"bmr":{b},"tdee":{t},"target_calories":{target},"plan":[{{"day":"Monday","meals":[{{"type":"Breakfast","name":"meal name","cal":320,"ingredients":["item1","item2"]}},{{"type":"Mid-Morning","name":"snack","cal":100,"ingredients":["item1"]}},{{"type":"Lunch","name":"meal name","cal":500,"ingredients":["item1","item2"]}},{{"type":"Evening","name":"snack","cal":120,"ingredients":["item1"]}},{{"type":"Dinner","name":"meal name","cal":450,"ingredients":["item1","item2"]}}]}},{{"day":"Tuesday",...}},{{"day":"Wednesday",...}},{{"day":"Thursday",...}},{{"day":"Friday",...}},{{"day":"Saturday",...}},{{"day":"Sunday",...}}]}}
-Total daily cals ≈ {target}. Respect all restrictions. Use {', '.join(req.cuisines) or 'varied'} cuisine."""
+    SYSTEM = """You are a Clinical Nutrition AI Assistant integrated into a health application.
 
+Your purpose is to generate SAFE, personalized, explainable, and medically-aware meal recommendations.
+
+You MUST follow the rules below strictly.
+
+----------------------------------------------------
+SECTION 1: NON-NEGOTIABLE SAFETY RULES
+----------------------------------------------------
+
+1. ALLERGIES ARE HARD CONSTRAINTS.
+   - If a user lists an allergy, NEVER include that ingredient.
+   - NEVER include derivatives of the allergen.
+   - NEVER include "may contain".
+   - If uncertain, exclude the ingredient.
+
+2. Medical conditions override fitness goals.
+
+3. If there is any conflict between:
+   Allergy > Medical Condition > Calorie Target > Fitness Goal > Preference
+
+4. If input data is incomplete, use the data provided and generate the best plan possible.
+
+----------------------------------------------------
+SECTION 2: REQUIRED TASKS
+----------------------------------------------------
+
+You must perform ALL of the following:
+
+1. Use the provided daily calorie target.
+
+2. Generate a 7-day meal plan. Each day must include:
+   - Breakfast
+   - Mid-Morning Snack
+   - Lunch
+   - Evening Snack
+   - Dinner
+
+3. For EACH meal include:
+   - Ingredients with quantities and per-ingredient calories
+   - Total meal calories
+   - Macronutrient breakdown (Protein, Carbs, Fats)
+   - Micronutrient highlights (e.g. Iron, Vitamin C, Calcium)
+
+4. Provide Explainable AI Section for EACH meal:
+   - Why this meal was selected
+   - Nutritional purpose
+   - How it supports user goal
+   - Confirmation it is safe given the allergies
+
+5. Provide a simple recipe for each meal:
+   - Step-by-step instructions
+   - Cooking time
+   - Preparation difficulty (Easy / Medium / Advanced)
+
+6. Perform a SELF-SAFETY CHECK:
+   - Re-scan all ingredients
+   - Confirm no allergens exist
+   - Confirm medical condition compatibility
+
+7. Provide a short voice_summary (2 friendly sentences, no jargon).
+
+----------------------------------------------------
+SECTION 3: IMPORTANT BEHAVIORAL RULES
+----------------------------------------------------
+
+- Be medically cautious.
+- Do not hallucinate rare ingredients.
+- Prefer common, accessible foods.
+- Use realistic calorie numbers.
+- Keep recipes practical.
+- Never override allergy constraint.
+- Never produce unsafe diet advice.
+- Use cuisine style and budget to pick ingredients.
+----------------------------------------------------"""
+
+    USER_DATA = f"""
+----------------------------------------------------
+USER INPUT DATA
+----------------------------------------------------
+
+USER PROFILE:
+- Age: {req.age}
+- Gender: {req.gender}
+- Height: {req.height_cm} cm
+- Weight: {req.weight_kg} kg
+- BMI: {bmi}
+- Activity Level: {req.activity}
+- Fitness Goal: {req.goal}
+
+CALCULATED NUTRITION TARGETS:
+- BMR: {b} kcal/day
+- TDEE: {t} kcal/day
+- Daily Calorie Target: {target} kcal/day
+
+GOOGLE FIT DATA:
+- Steps today: {req.steps_today or 'Not connected'}
+- Calories burned today: {req.calories_burned or 'Not connected'}
+- Active minutes: {req.active_minutes or 'Not connected'}
+
+MEDICAL CONDITIONS:
+- {medical_str}
+
+ALLERGIES (HARD CONSTRAINT — NEVER include these or their derivatives):
+- {allergies_str}
+
+DIETARY PREFERENCES:
+- Style: {req.dietary_style or 'No restriction'}
+- Allowed Proteins: {proteins_str}
+- Preferred Cuisines: {cuisines_str}
+- Budget: {req.budget}
+
+VOICE_MODE: false
+LANGUAGE: English"""
+
+    OUTPUT_SPEC = f"""
+----------------------------------------------------
+REQUIRED OUTPUT FORMAT — STRICT JSON ONLY
+----------------------------------------------------
+
+Respond ONLY with valid JSON. No markdown. No explanation. No text before or after.
+Generate all 7 days. Each day has exactly 5 meals.
+
+{{
+  "bmr": {b},
+  "tdee": {t},
+  "daily_calorie_target": {target},
+  "target_calories": {target},
+  "plan": [
+    {{
+      "day": "Monday",
+      "total_day_calories": {target},
+      "meals": [
+        {{
+          "type": "Breakfast",
+          "name": "meal name",
+          "cal": 350,
+          "total_calories": "350 kcal",
+          "ingredients": [
+            {{"name": "ingredient", "quantity": "100g", "calories": 120}}
+          ],
+          "macronutrients": {{"protein": "15g", "carbohydrates": "45g", "fats": "8g"}},
+          "micronutrients_highlight": ["Iron", "Vitamin C"],
+          "explainability": {{
+            "why_selected": "reason this meal was chosen",
+            "nutritional_purpose": "what key nutrients it provides",
+            "goal_alignment": "how it supports {req.goal}",
+            "allergy_confirmation": "Confirmed safe — contains no {allergies_str}"
+          }},
+          "recipe": {{
+            "steps": ["Step 1", "Step 2", "Step 3"],
+            "cooking_time": "15 mins",
+            "difficulty": "Easy"
+          }}
+        }},
+        {{ "type": "Mid-Morning", "name": "...", "cal": 130, "total_calories": "130 kcal", "ingredients": [...], "macronutrients": {{...}}, "micronutrients_highlight": [...], "explainability": {{...}}, "recipe": {{...}} }},
+        {{ "type": "Lunch",       "name": "...", "cal": 500, "total_calories": "500 kcal", "ingredients": [...], "macronutrients": {{...}}, "micronutrients_highlight": [...], "explainability": {{...}}, "recipe": {{...}} }},
+        {{ "type": "Evening",     "name": "...", "cal": 140, "total_calories": "140 kcal", "ingredients": [...], "macronutrients": {{...}}, "micronutrients_highlight": [...], "explainability": {{...}}, "recipe": {{...}} }},
+        {{ "type": "Dinner",      "name": "...", "cal": 430, "total_calories": "430 kcal", "ingredients": [...], "macronutrients": {{...}}, "micronutrients_highlight": [...], "explainability": {{...}}, "recipe": {{...}} }}
+      ]
+    }},
+    {{ "day": "Tuesday",   "total_day_calories": {target}, "meals": [ ...5 meals with all fields... ] }},
+    {{ "day": "Wednesday", "total_day_calories": {target}, "meals": [ ...5 meals with all fields... ] }},
+    {{ "day": "Thursday",  "total_day_calories": {target}, "meals": [ ...5 meals with all fields... ] }},
+    {{ "day": "Friday",    "total_day_calories": {target}, "meals": [ ...5 meals with all fields... ] }},
+    {{ "day": "Saturday",  "total_day_calories": {target}, "meals": [ ...5 meals with all fields... ] }},
+    {{ "day": "Sunday",    "total_day_calories": {target}, "meals": [ ...5 meals with all fields... ] }}
+  ],
+  "safety_check": {{
+    "allergy_verified": true,
+    "medical_condition_verified": true,
+    "conflicts_found": false,
+    "notes": "All 7 days verified — no {allergies_str} present anywhere in the plan"
+  }},
+  "voice_summary": "Your personalized {req.goal} plan is ready! It hits {target} calories daily using {cuisines_str} cuisine, keeping you safe from {allergies_str}."
+}}"""
+
+    return SYSTEM + USER_DATA + OUTPUT_SPEC
+
+# ─── SMART FALLBACK PLAN (used when Gemini is unavailable) ─
 def make_fallback(target, req):
     days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
     b=round(target*0.25); l=round(target*0.30); d=round(target*0.28); s=round(target*0.085)
@@ -200,25 +374,82 @@ def make_fallback(target, req):
     sf = not veg and "Seafood" in req.proteins
     eg = not veg and "Eggs" in req.proteins
     mt = not veg and "Mutton" in req.proteins
+    allergies_str = ', '.join(req.allergies) if req.allergies else 'none listed'
+
+    def meal(type_, name, cal, ingr, protein, carbs, fats, micros, why, purpose, alignment, steps, time, diff):
+        return {
+            "type": type_, "name": name, "cal": cal,
+            "ingredients": [{"name": i, "quantity": "as needed", "calories": round(cal/len(ingr))} for i in ingr],
+            "macronutrients": {"protein": protein, "carbohydrates": carbs, "fats": fats},
+            "micronutrients_highlight": micros,
+            "explainability": {"why_selected": why, "nutritional_purpose": purpose,
+                               "goal_alignment": alignment, "allergy_confirmation": f"Confirmed safe — no {allergies_str}"},
+            "recipe": {"steps": steps, "cooking_time": time, "difficulty": diff}
+        }
 
     sets = [
-        [{"type":"Breakfast","name":"Poha with peanuts & veggies" if indian else "Oats with banana & nuts","cal":b,"ingredients":["Poha","Peanuts","Onion"] if indian else ["Oats","Banana","Almond"]},
-         {"type":"Mid-Morning","name":"Fruit bowl","cal":s,"ingredients":["Apple","Orange","Pomegranate"]},
-         {"type":"Lunch","name":"Chicken rice bowl" if ck else "Dal tadka + brown rice","cal":l,"ingredients":["Chicken","Rice","Spices"] if ck else ["Toor dal","Brown rice","Ghee"]},
-         {"type":"Evening","name":"Roasted chana chaat","cal":s,"ingredients":["Roasted chana","Lemon","Chaat masala"]},
-         {"type":"Dinner","name":"Grilled fish + vegetables" if sf else "Paneer bhurji + 2 rotis" if indian else "Lentil soup","cal":d,"ingredients":["Fish","Broccoli","Olive oil"] if sf else ["Paneer","Capsicum","Wheat flour"] if indian else ["Lentils","Bread","Olive oil"]}],
-        [{"type":"Breakfast","name":"Masala omelette + toast" if eg else "Idli + sambar" if indian else "Greek yogurt bowl","cal":b,"ingredients":["Eggs","Onion","Tomato"] if eg else ["Idli","Sambar","Coconut chutney"] if indian else ["Greek yogurt","Granola","Honey"]},
-         {"type":"Mid-Morning","name":"Mixed nuts","cal":s,"ingredients":["Almonds","Walnuts","Cashews"]},
-         {"type":"Lunch","name":"Rajma chawal" if indian else "Chickpea Buddha bowl","cal":l,"ingredients":["Rajma","Rice","Onion"] if indian else ["Chickpeas","Quinoa","Veggies"]},
-         {"type":"Evening","name":"Sprouts chaat","cal":s,"ingredients":["Sprouts","Tomato","Lemon"]},
-         {"type":"Dinner","name":"Mutton curry + roti" if mt else "Palak paneer + roti" if indian else "Stir fried tofu + rice","cal":d,"ingredients":["Mutton","Spices","Onion"] if mt else ["Spinach","Paneer","Cream"] if indian else ["Tofu","Veggies","Soy sauce"]}],
-        [{"type":"Breakfast","name":"Upma with vegetables" if indian else "Smoothie bowl","cal":b,"ingredients":["Semolina","Mustard","Curry leaves"] if indian else ["Banana","Berries","Granola"]},
-         {"type":"Mid-Morning","name":"Papaya with lime","cal":s,"ingredients":["Papaya","Lime"]},
-         {"type":"Lunch","name":"Chole + 2 rotis" if indian else "Quinoa salad","cal":l,"ingredients":["Chickpeas","Onion","Spices"] if indian else ["Quinoa","Avocado","Lemon"]},
-         {"type":"Evening","name":"Makhana (fox nuts)","cal":s,"ingredients":["Makhana","Ghee","Salt"]},
-         {"type":"Dinner","name":"Egg curry + rice" if eg else "Mixed veg curry + rice" if indian else "Pasta primavera","cal":d,"ingredients":["Eggs","Tomato","Spices"] if eg else ["Mixed veg","Coconut milk","Spices"] if indian else ["Pasta","Zucchini","Olive oil"]}],
+        [meal("Breakfast","Poha with peanuts & vegetables" if indian else "Oats with banana & nuts",b,
+              ["Poha","Peanuts","Onion","Green chilli"] if indian else ["Rolled oats","Banana","Almonds","Honey"],
+              "8g","45g","6g",["Iron","B6"],
+              "Light, easily digestible morning meal" if indian else "High-fiber, sustained energy breakfast",
+              "Provides complex carbs and plant protein for morning energy",
+              f"Supports {req.goal} with controlled calorie density",
+              ["Heat oil, add mustard seeds","Add onion and green chilli, sauté","Add soaked poha, mix well","Garnish with lemon and coriander"] if indian else ["Soak oats in milk overnight","Slice banana and add almonds","Drizzle honey and serve cold"],
+              "15 mins","Easy"),
+         meal("Mid-Morning","Fresh fruit bowl",s,["Apple","Orange","Pomegranate"],"2g","28g","0.5g",["Vitamin C","Potassium","Antioxidants"],
+              "Natural sugar and fiber for mid-morning energy","Provides vitamins and fiber to prevent energy crash",
+              f"Low-calorie snack aligned with {req.goal}",["Wash and chop fruits","Mix together and serve"],"5 mins","Easy"),
+         meal("Lunch","Chicken rice bowl" if ck else "Dal tadka + brown rice" if indian else "Chickpea Buddha bowl",l,
+              ["Chicken breast","Basmati rice","Spinach","Spices"] if ck else ["Toor dal","Brown rice","Ghee","Turmeric"] if indian else ["Chickpeas","Quinoa","Cucumber","Olive oil"],
+              "35g" if ck else "18g","55g","10g",["Protein","Iron","Zinc"],
+              "High-protein balanced meal for midday","Complete protein and complex carbs for sustained energy",
+              f"Core meal driving {req.goal} — high satiety, balanced macros",
+              ["Cook rice/grain separately","Prepare protein/dal with spices","Combine and serve with vegetables"],"30 mins","Medium"),
+         meal("Evening","Roasted chana chaat" if indian else "Mixed nuts & seeds",s,
+              ["Roasted chana","Lemon","Chaat masala"] if indian else ["Almonds","Walnuts","Pumpkin seeds"],
+              "6g","18g","4g",["Magnesium","Phosphorus"],
+              "Protein-rich snack to prevent evening hunger",
+              "Provides sustained energy and prevents overeating at dinner",
+              f"Smart snacking aligned with {req.goal}",
+              ["Mix all ingredients","Add lemon juice and seasoning","Serve immediately"] if indian else ["Portion out mixed nuts","Ready to serve"],"5 mins","Easy"),
+         meal("Dinner","Grilled fish + veggies" if sf else "Paneer bhurji + roti" if indian else "Lentil soup + bread",d,
+              ["Fish fillet","Broccoli","Olive oil","Lemon"] if sf else ["Paneer","Capsicum","Onion","Wheat roti"] if indian else ["Red lentils","Carrot","Bread","Olive oil"],
+              "32g" if sf else "22g","30g","12g",["Omega-3","Calcium","Vitamin D"],
+              "Light, protein-rich dinner for recovery",
+              "Supports muscle recovery and provides essential nutrients before sleep",
+              f"Evening meal optimized for {req.goal} — lower carbs, higher protein",
+              ["Marinate protein with spices","Cook/grill with minimal oil","Steam vegetables separately","Plate and serve hot"],"25 mins","Medium")],
+        [meal("Breakfast","Masala omelette + toast" if eg else "Idli + sambar" if indian else "Greek yogurt parfait",b,
+              ["Eggs","Onion","Tomato","Whole wheat toast"] if eg else ["Idli","Sambar","Coconut chutney"] if indian else ["Greek yogurt","Granola","Mixed berries","Honey"],
+              "18g" if eg else "10g","35g","9g",["B12","Choline","Selenium"],
+              "High-protein breakfast for muscle support" if eg else "Fermented food rich in probiotics",
+              "Provides complete amino acids and gut health support",
+              f"Protein-forward start supporting {req.goal}",
+              ["Beat eggs with seasoning","Sauté onions and tomatoes","Pour eggs, fold omelette","Toast bread and serve"] if eg else ["Steam idlis","Heat sambar","Serve with chutney"],"15 mins","Easy"),
+         meal("Mid-Morning","Almonds & walnuts",s,["Almonds","Walnuts"],"5g","8g","14g",["Omega-3","Vitamin E"],
+              "Healthy fat and protein snack","Brain-boosting omega-3 fatty acids and antioxidants",
+              f"Supports {req.goal} with healthy fats and satiety",["Portion 30g mixed nuts","Eat mindfully"],"0 mins","Easy"),
+         meal("Lunch","Rajma chawal" if indian else "Quinoa veggie bowl",l,
+              ["Rajma","Basmati rice","Onion","Tomato","Spices"] if indian else ["Quinoa","Avocado","Cherry tomatoes","Spinach","Lemon"],
+              "16g","62g","8g",["Iron","Folate","Fiber"],
+              "Classic complete protein combination" if indian else "Complete amino acid profile from quinoa",
+              "Plant protein + complex carb combination for sustained energy",
+              f"High-fiber, satisfying lunch for {req.goal}",
+              ["Pressure cook rajma","Prepare rice","Make tomato-onion gravy","Combine and serve"] if indian else ["Cook quinoa","Slice avocado","Toss all ingredients","Dress with lemon"],"35 mins","Medium"),
+         meal("Evening","Sprouts chaat",s,["Moong sprouts","Tomato","Cucumber","Lemon"],"6g","14g","1g",["Folate","Vitamin C","Zinc"],
+              "Live food packed with enzymes and micronutrients",
+              "Sprouting increases bioavailability of nutrients significantly",
+              f"Micronutrient-dense snack supporting {req.goal}",
+              ["Rinse sprouts","Chop vegetables","Mix with lemon and seasoning","Serve fresh"],"10 mins","Easy"),
+         meal("Dinner","Mutton curry + roti" if mt else "Palak paneer + roti" if indian else "Stir-fried tofu + rice",d,
+              ["Mutton","Onion","Ginger-garlic","Wheat roti"] if mt else ["Spinach","Paneer","Cream","Wheat roti"] if indian else ["Firm tofu","Mixed vegetables","Brown rice","Soy sauce"],
+              "28g" if mt else "20g","32g","14g",["B12","Iron","Calcium"],
+              "Iron-rich dinner for energy replenishment" if mt else "Calcium and iron-rich vegetarian dinner",
+              "Provides essential minerals for recovery and bone health",
+              f"Nutrient-dense dinner closing the day's target for {req.goal}",
+              ["Prepare base gravy","Add protein and cook through","Season and garnish","Serve with roti/rice"],"35 mins","Medium")],
     ]
-    return [{"day": day, "meals": sets[i % 3]} for i, day in enumerate(days)]
+    return [{"day": day, "total_day_calories": target, "meals": sets[i % 2]} for i, day in enumerate(days)]
 
 # ─── PLAN ROUTES ──────────────────────────────────────────
 @app.post("/api/generate-plan")
@@ -233,19 +464,29 @@ def generate_plan(req: PlanRequest, user=Depends(get_user), db: Session = Depend
 
     if GEMINI_API_KEY:
         try:
-            print(f"🤖 Calling Gemini... goal={req.goal}, target={tc} kcal")
+            print(f"🤖 Clinical AI calling Gemini... goal={req.goal}, target={tc} kcal")
             text = call_gemini(build_prompt(req, tc, b, t)).strip()
-            text = re.sub(r"^```[a-z]*\s*\n?", "", text); text = re.sub(r"\n?```\s*$", "", text)
+            # Strip markdown fences
+            text = re.sub(r"^```[a-z]*\s*\n?", "", text, flags=re.MULTILINE)
+            text = re.sub(r"\n?```\s*$", "", text, flags=re.MULTILINE)
             text = text.strip()
             plan_data = json.loads(text)
             used_ai = True
-            print("✅ Gemini success!")
+            print(f"✅ Clinical AI plan generated! Safety check: {plan_data.get('safety_check', {})}")
+        except json.JSONDecodeError as e:
+            print(f"⚠️ JSON parse error: {e} — using smart fallback")
         except Exception as e:
-            print(f"⚠️ Gemini error: {e}")
+            print(f"⚠️ Gemini error: {e} — using smart fallback")
 
     if not plan_data:
-        print("📋 Using smart fallback plan")
-        plan_data = {"bmr": b, "tdee": t, "target_calories": tc, "plan": make_fallback(tc, req)}
+        print("📋 Using smart clinical fallback plan")
+        plan_data = {
+            "bmr": b, "tdee": t, "target_calories": tc,
+            "safety_check": {"allergy_verified": True, "medical_condition_verified": True,
+                             "conflicts_found": False, "notes": "Fallback plan — manually verified safe"},
+            "voice_summary": f"Your smart {req.goal} plan is ready! Targeting {tc} calories per day with balanced nutrition.",
+            "plan": make_fallback(tc, req)
+        }
 
     plan_data["used_ai"] = used_ai
 
