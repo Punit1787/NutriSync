@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NutriSync – Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root{--green:#2d6a4f;--gl:#52b788;--gp:#d8f3dc;--cream:#fefdf8;--dark:#1a2e1e;--gray:#6b7a6d;}
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:#f0f7f2;color:var(--dark);}
+  .app{display:grid;grid-template-columns:250px 1fr;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{background:var(--dark);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .sidebar-top{padding:2rem 1.4rem 1.4rem;}
+  .logo{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:900;color:var(--gl);margin-bottom:2rem;}
+  .nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.9rem;border-radius:9px;cursor:pointer;color:#8fb896;font-size:0.86rem;font-weight:500;transition:all 0.2s;margin-bottom:0.15rem;text-decoration:none;}
+  .nav-item:hover{background:#1e3a24;color:white;}
+  .nav-item.active{background:var(--green);color:white;}
+  .nav-icon{font-size:1rem;width:18px;text-align:center;}
+  .sidebar-bottom{margin-top:auto;padding:1.3rem;border-top:1px solid #2d4a32;}
+  .user-card{display:flex;align-items:center;gap:0.75rem;}
+  .uav{width:34px;height:34px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:white;}
+  .uname{font-size:0.83rem;font-weight:600;color:#b7d4bc;}
+  .uemail{font-size:0.72rem;color:#6a8a6f;margin-top:0.1rem;}
+  .logout-btn{background:none;border:none;color:#6a8a6f;font-size:0.73rem;cursor:pointer;margin-top:0.7rem;font-family:'DM Sans',sans-serif;display:block;}
+  .logout-btn:hover{color:#e63946;}
+
+  /* CONTENT */
+  .content{padding:2.2rem;}
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:2.2rem;}
+  .page-header h1{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:900;}
+  .page-header p{color:var(--gray);font-size:0.87rem;margin-top:0.18rem;}
+  .new-btn{padding:0.65rem 1.4rem;background:var(--green);color:white;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.22s;}
+  .new-btn:hover{background:var(--dark);}
+
+  /* STATS */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;margin-bottom:2.2rem;}
+  .sc{background:white;border-radius:14px;padding:1.3rem;border:1px solid #e8f4ec;transition:transform 0.2s;}
+  .sc:hover{transform:translateY(-2px);}
+  .sc.green{background:linear-gradient(135deg,var(--green),var(--gl));color:white;}
+  .sc.green .sv{color:white;}
+  .sc.green .sl{color:rgba(255,255,255,0.8);}
+  .si{font-size:1.4rem;margin-bottom:0.7rem;}
+  .sv{font-family:'Playfair Display',serif;font-size:1.7rem;font-weight:900;color:var(--dark);}
+  .sl{font-size:0.78rem;color:var(--gray);margin-top:0.15rem;}
+  .sc2{font-size:0.72rem;margin-top:0.4rem;color:var(--gl);}
+
+  /* GRID */
+  .mgrid{display:grid;grid-template-columns:1fr 320px;gap:1.8rem;}
+  .card{background:white;border-radius:18px;padding:1.6rem;border:1px solid #e8f4ec;margin-bottom:1.5rem;}
+  .card:last-child{margin-bottom:0;}
+  .ct{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;margin-bottom:1.3rem;display:flex;align-items:center;gap:0.5rem;}
+
+  /* PLAN */
+  .plan-sum{background:linear-gradient(135deg,#f0f9f2,#e8f5ec);border-radius:12px;padding:1.3rem;margin-bottom:1.3rem;border:1px solid #c8e6d0;}
+  .pdate{font-size:0.76rem;color:var(--gray);margin-bottom:0.2rem;}
+  .pname{font-size:0.95rem;font-weight:600;margin-bottom:0.9rem;}
+  .macros{display:flex;gap:0.9rem;flex-wrap:wrap;}
+  .mb{background:white;border-radius:7px;padding:0.38rem 0.75rem;font-size:0.78rem;border:1px solid #d8f3dc;text-align:center;}
+  .mv{font-weight:700;color:var(--green);}
+  .ml{font-size:0.68rem;color:var(--gray);}
+  .day-scroll{display:flex;gap:0.7rem;overflow-x:auto;padding-bottom:0.4rem;scrollbar-width:none;margin-bottom:1.3rem;}
+  .day-scroll::-webkit-scrollbar{display:none;}
+  .dp{flex-shrink:0;padding:0.5rem 0.9rem;border-radius:50px;border:1.5px solid #dde8df;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s;background:white;color:var(--gray);}
+  .dp.active,.dp:hover{background:var(--green);color:white;border-color:var(--green);}
+  .mr{display:flex;justify-content:space-between;align-items:center;padding:0.8rem 0;border-bottom:1px solid #f5f5f5;font-size:0.85rem;}
+  .mr:last-child{border:none;}
+  .mt-badge{padding:0.18rem 0.65rem;border-radius:50px;font-size:0.7rem;font-weight:600;}
+  .b{background:#fef9c3;color:#854d0e;}.l{background:#dcfce7;color:#166534;}.d{background:#dbeafe;color:#1e40af;}.s{background:#fce7f3;color:#9d174d;}
+  .mn{font-size:0.85rem;font-weight:500;margin-top:0.18rem;}
+  .mc{font-size:0.8rem;color:var(--green);font-weight:600;}
+  .ingr-sm{font-size:0.7rem;color:#94a3b8;margin-top:0.1rem;}
+
+  /* RIGHT COLUMN */
+  .fit-card{background:linear-gradient(135deg,var(--dark),#1e3a24);border-radius:18px;padding:1.6rem;margin-bottom:1.5rem;color:white;}
+  .fit-card h3{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:0.25rem;}
+  .fit-card p{font-size:0.8rem;color:#8fb896;margin-bottom:1.1rem;}
+  .fit-stats{display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;margin-bottom:1.1rem;}
+  .fs{background:rgba(255,255,255,0.08);border-radius:9px;padding:0.7rem;text-align:center;}
+  .fsv{font-size:1.1rem;font-weight:700;color:var(--gl);}
+  .fsl{font-size:0.68rem;color:#8fb896;margin-top:0.15rem;}
+  .conn-btn{width:100%;padding:0.65rem;background:var(--gl);color:var(--dark);border:none;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all 0.2s;}
+  .conn-btn:hover{background:white;}
+  .conn-btn.conn{background:#1a2e1e;color:var(--gl);}
+
+  .ring-wrap{position:relative;display:inline-block;}
+  .ring-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+  .rv{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:900;color:var(--green);}
+  .rl{font-size:0.7rem;color:var(--gray);}
+
+  .pi{display:flex;justify-content:space-between;align-items:center;padding:0.85rem 0;border-bottom:1px solid #f0f0f0;}
+  .pi:last-child{border:none;}
+  .pidate{font-size:0.76rem;color:var(--gray);}
+  .pigoal{font-size:0.85rem;font-weight:500;}
+  .piv{cursor:pointer;font-size:0.76rem;color:var(--green);font-weight:600;}
+
+  /* PLAN MODAL */
+  .plan-modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+  .plan-modal.open{display:flex;}
+  .pm-inner{background:white;border-radius:20px;padding:2rem;width:90%;max-width:600px;max-height:85vh;overflow-y:auto;position:relative;}
+  .pm-close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.2rem;cursor:pointer;}
+  .pm-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;margin-bottom:1.2rem;color:var(--green);}
+  .pm-day{background:var(--cream);border-radius:12px;padding:1.1rem;margin-bottom:0.9rem;}
+  .pm-day h4{font-weight:700;color:var(--dark);margin-bottom:0.7rem;}
+
+  /* NO PLAN */
+  .no-plan{text-align:center;padding:3rem 2rem;color:var(--gray);}
+  .no-plan .np-icon{font-size:3rem;margin-bottom:1rem;}
+  .no-plan p{margin-bottom:1.2rem;font-size:0.92rem;}
+  .no-plan button{padding:0.7rem 1.8rem;background:var(--green);color:white;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:0.9rem;font-weight:600;cursor:pointer;}
+
+  @media(max-width:1100px){.stats{grid-template-columns:1fr 1fr;}}
+  @media(max-width:900px){.mgrid{grid-template-columns:1fr;}}
+  @media(max-width:768px){.app{grid-template-columns:1fr;}.sidebar{display:none;}.content{padding:1.3rem;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <div class="logo">🌿 NutriSync</div>
+      <a class="nav-item active" href="/dashboard"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="/planner"><span class="nav-icon">🍽️</span> Meal Planner</a>
+      <a class="nav-item" href="#" onclick="toggleFit()"><span class="nav-icon">🏃</span> Google Fit</a>
+      <a class="nav-item" href="/"><span class="nav-icon">🏠</span> Home</a>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="uav" id="uav">?</div>
+        <div><div class="uname" id="uname">Loading...</div><div class="uemail" id="uemail"></div></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">→ Logout</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="page-header">
+      <div><h1 id="welcome">Good morning! 👋</h1><p>Here's your nutrition overview for today.</p></div>
+      <button class="new-btn" onclick="window.location.href='/planner'">+ New Meal Plan</button>
+    </div>
+
+    <div class="stats">
+      <div class="sc green"><div class="si">🔥</div><div class="sv" id="s-cal">--</div><div class="sl">Daily Target (kcal)</div><div class="sc2">From your latest plan</div></div>
+      <div class="sc"><div class="si">🏃</div><div class="sv" id="s-steps">--</div><div class="sl">Steps Today</div><div class="sc2" style="color:#f4a261">Connect Google Fit</div></div>
+      <div class="sc"><div class="si">⚡</div><div class="sv" id="s-burned">--</div><div class="sl">Cal Burned</div><div class="sc2" style="color:#f4a261">Connect Google Fit</div></div>
+      <div class="sc"><div class="si">📅</div><div class="sv" id="s-plans">0</div><div class="sl">Plans Generated</div><div class="sc2">Total saved plans</div></div>
+    </div>
+
+    <div class="mgrid">
+      <div>
+        <div class="card" id="planCard">
+          <div class="ct">🍽️ Latest Meal Plan</div>
+          <div id="planContent">
+            <div class="no-plan"><div class="np-icon">🌿</div><p>No meal plan yet! Generate your first personalized plan.</p><button onclick="window.location.href='/planner'">Create My First Plan</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <!-- GOOGLE FIT -->
+        <div class="fit-card">
+          <h3>🏃 Activity Tracking</h3>
+          <p id="fitStatus">Connect to auto-adjust your calorie targets</p>
+          <div class="fit-stats" id="fitStats" style="display:none">
+            <div class="fs"><div class="fsv" id="fit-s">--</div><div class="fsl">Steps</div></div>
+            <div class="fs"><div class="fsv" id="fit-c">--</div><div class="fsl">Cal Burned</div></div>
+            <div class="fs"><div class="fsv" id="fit-m">--</div><div class="fsl">Active Min</div></div>
+            <div class="fs"><div class="fsv" id="fit-h">--</div><div class="fsl">Heart Rate</div></div>
+          </div>
+          <button class="conn-btn" id="fitBtn" onclick="toggleFit()">Connect Google Fit</button>
+        </div>
+
+        <!-- CALORIE RING -->
+        <div class="card">
+          <div class="ct">🎯 Calorie Progress</div>
+          <div style="text-align:center;padding:1rem 0;">
+            <div class="ring-wrap">
+              <svg width="110" height="110" style="transform:rotate(-90deg)">
+                <circle cx="55" cy="55" r="46" fill="none" stroke="#e8f4ec" stroke-width="9"/>
+                <circle cx="55" cy="55" r="46" fill="none" stroke="var(--gl)" stroke-width="9" stroke-dasharray="289" id="ringFill" stroke-dashoffset="289" stroke-linecap="round"/>
+              </svg>
+              <div class="ring-text"><div class="rv" id="ringPct">0%</div><div class="rl">of target</div></div>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--gray);margin-top:0.5rem;">
+            <span>Consumed: <strong id="consumed">0</strong> kcal</span>
+            <span>Target: <strong id="rtarget">--</strong> kcal</span>
+          </div>
+        </div>
+
+        <!-- PAST PLANS -->
+        <div class="card">
+          <div class="ct">📋 All My Plans</div>
+          <div id="pastPlans"><div style="color:var(--gray);font-size:0.85rem;text-align:center;padding:1rem">Loading...</div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- PLAN VIEW MODAL -->
+<div class="plan-modal" id="planModal">
+  <div class="pm-inner">
+    <button class="pm-close" onclick="document.getElementById('planModal').classList.remove('open')">✕</button>
+    <div class="pm-title" id="pmTitle">Meal Plan</div>
+    <div id="pmBody"></div>
+  </div>
+</div>
+
+<script>
+  let allPlans=[], fitConn=false;
+
+  async function init(){
+    const h=new Date().getHours();
+    const g=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+    document.getElementById('welcome').textContent=g+'! 👋';
+
+    const token=localStorage.getItem('token');
+    const name=localStorage.getItem('userName');
+
+    if(name){
+      document.getElementById('uname').textContent=name;
+      document.getElementById('uav').textContent=name[0].toUpperCase();
+      document.getElementById('welcome').textContent=g+', '+name+'! 👋';
+    }
+
+    if(token){
+      // Load user info
+      try{
+        const r=await fetch('/api/user-info',{headers:{'Authorization':'Bearer '+token}});
+        if(r.ok){
+          const u=await r.json();
+          document.getElementById('uname').textContent=u.name;
+          document.getElementById('uemail').textContent=u.email;
+          document.getElementById('uav').textContent=u.name[0].toUpperCase();
+          document.getElementById('welcome').textContent=g+', '+u.name+'! 👋';
+        }
+      }catch{}
+
+      // Load plans
+      try{
+        const r=await fetch('/api/my-plans',{headers:{'Authorization':'Bearer '+token}});
+        if(r.ok){
+          allPlans=await r.json();
+          document.getElementById('s-plans').textContent=allPlans.length;
+          if(allPlans.length>0) renderLatestPlan(allPlans[0]);
+          renderPastPlans();
+        }
+      }catch(e){
+        document.getElementById('s-plans').textContent='0';
+        renderPastPlans();
+      }
+    } else {
+      document.getElementById('uname').textContent='Guest';
+      document.getElementById('uemail').textContent='Not logged in';
+      renderPastPlans();
+    }
+  }
+
+  function renderLatestPlan(plan){
+    const target=plan.target_calories||2000;
+    document.getElementById('s-cal').textContent=target.toLocaleString();
+    document.getElementById('rtarget').textContent=target.toLocaleString();
+
+    const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const planDays=plan.plan||[];
+
+    let html=`
+      <div class="plan-sum">
+        <div class="pdate">${new Date(plan.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+        <div class="pname">${plan.goal||'Custom'} Plan</div>
+        <div class="macros">
+          <div class="mb"><div class="mv">${plan.bmr||'-'}</div><div class="ml">BMR</div></div>
+          <div class="mb"><div class="mv">${plan.tdee||'-'}</div><div class="ml">TDEE</div></div>
+          <div class="mb"><div class="mv">${target}</div><div class="ml">Target kcal</div></div>
+        </div>
+      </div>
+      <div class="day-scroll" id="dayPills">`;
+    days.forEach((d,i)=>{html+=`<div class="dp${i===0?' active':''}" onclick="switchDay(${i},this)">${d}</div>`;});
+    html+=`</div><div id="dayMeals">`;
+
+    if(planDays.length>0){
+      html+=renderMeals(planDays[0].meals||[]);
+    } else {
+      html+='<p style="color:var(--gray);font-size:0.87rem">No meal data available.</p>';
+    }
+    html+=`</div>`;
+
+    document.getElementById('planContent').innerHTML=html;
+    window._planDays=planDays;
+  }
+
+  function renderMeals(meals){
+    const badges={Breakfast:'b',Lunch:'l',Dinner:'d','Mid-Morning':'s',Evening:'s'};
+    return meals.map(m=>`
+      <div class="mr">
+        <div><span class="mt-badge ${badges[m.type]||'s'}">${m.type}</span>
+          <div class="mn">${m.name}</div>
+          ${m.ingredients?`<div class="ingr-sm">🧂 ${m.ingredients.join(', ')}</div>`:''}
+        </div>
+        <div class="mc">${m.cal} kcal</div>
+      </div>`).join('');
+  }
+
+  function switchDay(i, el){
+    document.querySelectorAll('.dp').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+    const days=window._planDays||[];
+    const meals=(days[i]||{}).meals||[];
+    document.getElementById('dayMeals').innerHTML=meals.length?renderMeals(meals):'<p style="color:var(--gray);font-size:0.87rem">No meals for this day.</p>';
+    // Update ring (rough consumed estimate = 60% of target for demo)
+    updateRing(60);
+  }
+
+  function updateRing(pct){
+    const circle=document.getElementById('ringFill');
+    const circumference=289;
+    const offset=circumference-(circumference*pct/100);
+    circle.style.strokeDashoffset=offset;
+    document.getElementById('ringPct').textContent=pct+'%';
+    const target=parseInt(document.getElementById('rtarget').textContent.replace(',',''))||2000;
+    document.getElementById('consumed').textContent=Math.round(target*pct/100).toLocaleString();
+  }
+
+  function renderPastPlans(){
+    const container=document.getElementById('pastPlans');
+    if(allPlans.length===0){
+      container.innerHTML='<p style="color:var(--gray);font-size:0.83rem;text-align:center;padding:0.5rem">No plans yet. <a href="/planner" style="color:var(--green);font-weight:600">Create one →</a></p>';
+      return;
+    }
+    container.innerHTML=allPlans.map((p,i)=>`
+      <div class="pi">
+        <div>
+          <div class="pidate">${new Date(p.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</div>
+          <div class="pigoal">${p.goal||'Custom'} · ${p.target_calories||'-'} kcal</div>
+        </div>
+        <span class="piv" onclick="viewPlan(${i})">View →</span>
+      </div>`).join('');
+  }
+
+  function viewPlan(i){
+    const plan=allPlans[i];
+    document.getElementById('pmTitle').textContent=(plan.goal||'Custom')+' Plan – '+new Date(plan.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+    const body=document.getElementById('pmBody');
+    body.innerHTML=(plan.plan||[]).map(day=>`
+      <div class="pm-day">
+        <h4>${day.day}</h4>
+        ${(day.meals||[]).map(m=>`<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px dashed #e0e0e0;font-size:0.84rem"><div><strong>${m.type}</strong> — ${m.name}${m.ingredients?'<br><span style="font-size:0.72rem;color:#94a3b8">'+m.ingredients.join(', ')+'</span>':''}</div><span style="color:var(--green);font-weight:600">${m.cal} kcal</span></div>`).join('')}
+      </div>`).join('');
+    document.getElementById('planModal').classList.add('open');
+  }
+
+  document.getElementById('planModal').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+
+  function toggleFit(){
+    if(!fitConn){
+      fitConn=true;
+      document.getElementById('fitStatus').textContent='Simulating activity data (demo mode)';
+      document.getElementById('fitStats').style.display='grid';
+      document.getElementById('fitBtn').textContent='✓ Connected (Demo)';
+      document.getElementById('fitBtn').classList.add('conn');
+      const steps=Math.floor(Math.random()*8000)+3000;
+      const burned=Math.floor(steps*0.04);
+      const mins=Math.floor(steps/200);
+      document.getElementById('fit-s').textContent=steps.toLocaleString();
+      document.getElementById('fit-c').textContent=burned;
+      document.getElementById('fit-m').textContent=mins;
+      document.getElementById('fit-h').textContent=Math.floor(Math.random()*20)+65;
+      document.getElementById('s-steps').textContent=steps.toLocaleString();
+      document.getElementById('s-burned').textContent=burned;
+      document.getElementById('sc2'+'').textContent='';
+      // Adjust target based on steps
+      const base=parseInt(document.getElementById('s-cal').textContent.replace(',',''))||2000;
+      let adj=base;
+      if(steps<4000) adj=Math.round(base*0.9);
+      else if(steps>10000) adj=Math.round(base*1.1);
+      if(adj!==base){document.getElementById('s-cal').textContent=adj.toLocaleString();document.getElementById('rtarget').textContent=adj.toLocaleString();}
+      updateRing(Math.floor(burned/adj*100*1.8));
+    } else {
+      alert('In production: This connects to Google Fit OAuth.\nFor demo, data is simulated above.');
+    }
+  }
+
+  function logout(){
+    localStorage.removeItem('token');
+    localStorage.removeItem('userName');
+    window.location.href='/';
+  }
+
+  init();
+</script>
+</body>
+</html>

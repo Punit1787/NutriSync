@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NutriSync – Build Your Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root{--green:#2d6a4f;--gl:#52b788;--gp:#d8f3dc;--cream:#fefdf8;--dark:#1a2e1e;--gray:#6b7a6d;}
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);min-height:100vh;}
+  .page{display:grid;grid-template-columns:280px 1fr;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{background:var(--dark);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+  .st{padding:2rem 1.4rem 1.4rem;}
+  .logo{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:900;color:var(--gl);margin-bottom:2.2rem;}
+  .ps{display:flex;align-items:flex-start;gap:.85rem;margin-bottom:1.6rem;opacity:.42;transition:opacity .3s;}
+  .ps.active{opacity:1;}.ps.done{opacity:.72;}
+  .pc{width:29px;height:29px;border-radius:50%;border:2px solid #2d4a32;display:flex;align-items:center;justify-content:center;font-size:.76rem;font-weight:600;color:#8fb896;flex-shrink:0;transition:all .3s;}
+  .ps.active .pc{border-color:var(--gl);background:var(--gl);color:var(--dark);}
+  .ps.done .pc{border-color:var(--gl);color:var(--gl);}
+  .pi h4{font-size:.82rem;font-weight:600;color:#b7d4bc;margin-bottom:.08rem;}
+  .pi p{font-size:.7rem;color:#6a8a6f;}
+  .pl{width:2px;height:14px;background:#2d4a32;margin:.22rem 0 .22rem 13px;}
+  .sb2{margin-top:auto;padding:1.2rem 1.4rem;border-top:1px solid #2d4a32;}
+  .sb2 a{color:#6a8a6f;font-size:.76rem;text-decoration:none;}
+
+  /* MAIN */
+  .main{padding:2.8rem 3.2rem;max-width:640px;}
+  .sh-tag{font-size:.7rem;font-weight:600;color:var(--gl);text-transform:uppercase;letter-spacing:2px;margin-bottom:.42rem;}
+  .sh-title{font-family:'Playfair Display',serif;font-size:1.9rem;font-weight:900;line-height:1.2;margin-bottom:.42rem;}
+  .sh-desc{color:var(--gray);font-size:.88rem;margin-bottom:2rem;}
+  .fs{display:none;} .fs.active{display:block;animation:si .35s ease;}
+  @keyframes si{from{opacity:0;transform:translateX(16px);}to{opacity:1;transform:none;}}
+
+  .fg{margin-bottom:1.3rem;}
+  .fg label{display:block;font-size:.78rem;font-weight:600;margin-bottom:.42rem;}
+  .fr{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;}
+  input[type=text],input[type=number],input[type=date],select{width:100%;padding:.68rem .92rem;border:1.5px solid #dde8df;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.87rem;background:white;outline:none;transition:border .2s;}
+  input:focus,select:focus{border-color:var(--gl);}
+  .ut{display:flex;background:#eef5f0;border-radius:7px;overflow:hidden;margin-bottom:.42rem;width:fit-content;}
+  .ut button{padding:.28rem .72rem;border:none;background:transparent;font-family:'DM Sans',sans-serif;font-size:.77rem;cursor:pointer;color:var(--gray);transition:all .2s;}
+  .ut button.active{background:var(--green);color:white;border-radius:6px;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:.45rem;}
+  .chip{padding:.36rem .86rem;border:1.5px solid #dde8df;border-radius:50px;font-size:.78rem;font-weight:500;cursor:pointer;transition:all .2s;background:white;color:var(--dark);}
+  .chip:hover{border-color:var(--gl);}
+  .chip.sel{background:var(--green);color:white;border-color:var(--green);}
+  .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:.52rem;}
+  .cc{padding:.72rem;border:1.5px solid #dde8df;border-radius:10px;cursor:pointer;transition:all .2s;background:white;text-align:center;}
+  .cc:hover{border-color:var(--gl);}
+  .cc.sel{background:var(--gp);border-color:var(--green);}
+  .cc .ci{font-size:1.35rem;margin-bottom:.22rem;}
+  .cc .cl{font-size:.73rem;font-weight:600;}
+
+  .fnav{display:flex;gap:.85rem;margin-top:2.2rem;}
+  .bnext{padding:.77rem 2.1rem;background:var(--green);color:white;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;transition:all .22s;}
+  .bnext:hover{background:var(--dark);}
+  .bback{padding:.77rem 1.5rem;background:transparent;border:1.5px solid #dde8df;color:var(--gray);border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.88rem;cursor:pointer;transition:all .2s;}
+  .bback:hover{border-color:var(--green);}
+  .bgen{padding:.77rem 2.1rem;background:linear-gradient(135deg,var(--green),var(--gl));color:white;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:700;cursor:pointer;transition:all .22s;box-shadow:0 4px 16px rgba(45,106,79,.28);}
+  .bgen:hover{transform:translateY(-2px);box-shadow:0 7px 24px rgba(45,106,79,.38);}
+  .bgen:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+
+  /* LOADING */
+  #lo{position:fixed;inset:0;background:rgba(254,253,248,.96);z-index:999;display:none;align-items:center;justify-content:center;flex-direction:column;gap:1.2rem;}
+  #lo.show{display:flex;}
+  .spin{width:52px;height:52px;border:4px solid var(--gp);border-top-color:var(--green);border-radius:50%;animation:spin .75s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .lt{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700;color:var(--green);}
+  .ls{color:var(--gray);font-size:.85rem;}
+  .lsteps{display:flex;flex-direction:column;gap:.35rem;margin-top:.4rem;}
+  .lstep{font-size:.8rem;color:var(--gray);}
+  .lstep.done{color:var(--gl);}
+
+  /* RESULT */
+  #rs{display:none;} #rs.show{display:block;}
+  .rh{background:linear-gradient(135deg,var(--green),var(--gl));border-radius:16px;padding:1.7rem;color:white;margin-bottom:1.6rem;}
+  .rh h2{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:900;margin-bottom:.22rem;}
+  .cb{display:flex;gap:1.1rem;margin-top:.85rem;flex-wrap:wrap;}
+  .ci2{background:rgba(255,255,255,.18);border-radius:8px;padding:.45rem .85rem;font-size:.8rem;text-align:center;}
+  .ci2 strong{display:block;font-size:1.05rem;font-weight:700;}
+  .ai-tag{background:rgba(255,255,255,.25);border-radius:50px;padding:.18rem .65rem;font-size:.7rem;font-weight:700;margin-left:.5rem;}
+  .dp{background:white;border-radius:13px;padding:1.3rem;margin-bottom:.85rem;border:1px solid #e8f4ec;}
+  .dp h3{font-family:'Playfair Display',serif;font-weight:700;color:var(--green);margin-bottom:.85rem;padding-bottom:.42rem;border-bottom:1px solid #e8f4ec;}
+  .mi{display:flex;justify-content:space-between;align-items:flex-start;padding:.42rem 0;border-bottom:1px dashed #f0f0f0;font-size:.84rem;}
+  .mi:last-child{border:none;}
+  .mname{font-weight:500;}
+  .mtype{color:var(--gray);font-size:.73rem;}
+  .mcal{color:var(--green);font-weight:600;font-size:.78rem;flex-shrink:0;margin-left:.5rem;}
+  .ingr{font-size:.7rem;color:#94a3b8;margin-top:.08rem;}
+  .ract{display:flex;gap:.85rem;margin-top:1.6rem;flex-wrap:wrap;}
+  .bsave{padding:.68rem 1.5rem;background:var(--green);color:white;border:none;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;}
+  .bsave:hover{background:var(--dark);}
+  .bredo{padding:.68rem 1.5rem;background:white;color:var(--green);border:1.5px solid var(--green);border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.85rem;cursor:pointer;}
+  .err-box{background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:.85rem;color:#dc2626;}
+
+  @media(max-width:768px){.page{grid-template-columns:1fr;}.sidebar{display:none;}.main{padding:1.8rem 1.1rem;}}
+</style>
+</head>
+<body>
+<div id="lo">
+  <div class="spin"></div>
+  <div class="lt">🌿 Generating your plan...</div>
+  <div class="ls" id="lstat">Connecting to AI</div>
+  <div class="lsteps">
+    <div class="lstep done">✓ Calculating your BMR &amp; TDEE</div>
+    <div class="lstep" id="ls2">⟳ Sending to Gemini AI...</div>
+    <div class="lstep" id="ls3">⟳ Building 7-day schedule...</div>
+    <div class="lstep" id="ls4">⟳ Finalizing your plan...</div>
+  </div>
+</div>
+
+<div class="page">
+  <aside class="sidebar">
+    <div class="st">
+      <div class="logo">🌿 NutriSync</div>
+      <div class="ps active" id="ps1"><div class="pc" id="pc1">1</div><div class="pi"><h4>Basic Info</h4><p>Age, height, weight</p></div></div>
+      <div class="pl"></div>
+      <div class="ps" id="ps2"><div class="pc" id="pc2">2</div><div class="pi"><h4>Goals & Activity</h4><p>Targets & conditions</p></div></div>
+      <div class="pl"></div>
+      <div class="ps" id="ps3"><div class="pc" id="pc3">3</div><div class="pi"><h4>Diet Preferences</h4><p>Food type & allergies</p></div></div>
+      <div class="pl"></div>
+      <div class="ps" id="ps4"><div class="pc" id="pc4">4</div><div class="pi"><h4>Cuisine & Budget</h4><p>Flavor & cost</p></div></div>
+    </div>
+    <div class="sb2"><a href="/">← Back to Home</a></div>
+  </aside>
+
+  <main class="main">
+    <!-- STEP 1 -->
+    <div class="fs active" id="step1">
+      <div class="sh-tag">Step 1 of 4</div>
+      <div class="sh-title">Tell us about yourself</div>
+      <div class="sh-desc">We use this to calculate your basal metabolic rate.</div>
+      <div class="fr">
+        <div class="fg"><label>Date of Birth</label><input type="date" id="dob"/></div>
+        <div class="fg"><label>Gender</label><div class="chips">
+          <span class="chip" data-g="gender" onclick="selChip(this)">Male</span>
+          <span class="chip" data-g="gender" onclick="selChip(this)">Female</span>
+          <span class="chip" data-g="gender" onclick="selChip(this)">Other</span>
+        </div></div>
+      </div>
+      <div class="fg">
+        <label>Height</label>
+        <div class="ut"><button class="active" id="ht-cm" onclick="setHU('cm')">cm</button><button id="ht-ft" onclick="setHU('ft')">ft/in</button></div>
+        <div id="h-cm"><input type="number" id="hcm" placeholder="e.g. 170" min="100" max="250"/></div>
+        <div id="h-ft" style="display:none" class="fr"><input type="number" id="hft" placeholder="ft" min="3" max="8"/><input type="number" id="hin" placeholder="in" min="0" max="11"/></div>
+      </div>
+      <div class="fg">
+        <label>Weight</label>
+        <div class="ut"><button class="active" id="wt-kg" onclick="setWU('kg')">kg</button><button id="wt-lb" onclick="setWU('lb')">lb</button></div>
+        <input type="number" id="wt" placeholder="e.g. 70" min="30" max="300"/>
+      </div>
+      <div class="fnav"><button class="bnext" onclick="goNext(1)">Next →</button></div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="fs" id="step2">
+      <div class="sh-tag">Step 2 of 4</div>
+      <div class="sh-title">Goals & Activity</div>
+      <div class="sh-desc">What are you working towards?</div>
+      <div class="fg"><label>Fitness Goal</label><div class="chips" id="goalChips">
+        <span class="chip" data-g="goal" onclick="selChip(this)">💪 Muscle Gain</span>
+        <span class="chip" data-g="goal" onclick="selChip(this)">🔥 Weight Loss</span>
+        <span class="chip" data-g="goal" onclick="selChip(this)">⚖️ Maintain Weight</span>
+        <span class="chip" data-g="goal" onclick="selChip(this)">🏃 Athletic Performance</span>
+      </div></div>
+      <div class="fg"><label>Activity Level</label>
+        <select id="activity">
+          <option value="">Select activity level</option>
+          <option value="sedentary">Sedentary (desk job, no exercise)</option>
+          <option value="light">Lightly Active (1-3 days/week)</option>
+          <option value="moderate">Moderately Active (3-5 days/week)</option>
+          <option value="very">Very Active (6-7 days/week)</option>
+          <option value="extra">Extra Active (athlete / 2x daily)</option>
+        </select>
+      </div>
+      <div class="fg"><label>Medical Conditions</label><div class="chips" id="medChips">
+        <span class="chip multi" onclick="togChip(this)">None</span>
+        <span class="chip multi" onclick="togChip(this)">Diabetes</span>
+        <span class="chip multi" onclick="togChip(this)">Hypertension</span>
+        <span class="chip multi" onclick="togChip(this)">PCOS</span>
+        <span class="chip multi" onclick="togChip(this)">Thyroid</span>
+        <span class="chip multi" onclick="togChip(this)">High Cholesterol</span>
+        <span class="chip multi" onclick="togChip(this)">IBS</span>
+        <span class="chip multi" onclick="togChip(this)">Heart Condition</span>
+      </div></div>
+      <div class="fnav"><button class="bback" onclick="goStep(1)">← Back</button><button class="bnext" onclick="goNext(2)">Next →</button></div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="fs" id="step3">
+      <div class="sh-tag">Step 3 of 4</div>
+      <div class="sh-title">Diet Preferences</div>
+      <div class="sh-desc">Customize your food profile.</div>
+      <div class="fg"><label>Dietary Style</label><div class="chips">
+        <span class="chip" data-g="diet" onclick="selChip(this)">🥬 Vegetarian</span>
+        <span class="chip" data-g="diet" onclick="selChip(this)">🌱 Vegan</span>
+        <span class="chip" data-g="diet" onclick="selChip(this)">🍖 Non-Vegetarian</span>
+        <span class="chip" data-g="diet" onclick="selChip(this)">🐟 Pescatarian</span>
+      </div></div>
+      <div class="fg"><label>Proteins You Eat</label><div class="chips" id="proteinChips">
+        <span class="chip multi" onclick="togChip(this)">🥚 Eggs</span>
+        <span class="chip multi" onclick="togChip(this)">🥛 Dairy</span>
+        <span class="chip multi" onclick="togChip(this)">🍗 Chicken</span>
+        <span class="chip multi" onclick="togChip(this)">🐑 Mutton</span>
+        <span class="chip multi" onclick="togChip(this)">🐟 Seafood</span>
+        <span class="chip multi" onclick="togChip(this)">🐄 Beef</span>
+      </div></div>
+      <div class="fg"><label>Allergies</label><div class="chips" id="allergyChips">
+        <span class="chip multi" onclick="togChip(this)">🥜 Peanuts</span>
+        <span class="chip multi" onclick="togChip(this)">🌾 Gluten</span>
+        <span class="chip multi" onclick="togChip(this)">🥛 Lactose</span>
+        <span class="chip multi" onclick="togChip(this)">🌰 Tree Nuts</span>
+        <span class="chip multi" onclick="togChip(this)">🍳 Egg Allergy</span>
+        <span class="chip multi" onclick="togChip(this)">None</span>
+      </div></div>
+      <div class="fnav"><button class="bback" onclick="goStep(2)">← Back</button><button class="bnext" onclick="goNext(3)">Next →</button></div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="fs" id="step4">
+      <div class="sh-tag">Step 4 of 4</div>
+      <div class="sh-title">Cuisine & Budget</div>
+      <div class="sh-desc">What flavors do you love?</div>
+      <div class="fg"><label>Preferred Cuisines</label>
+        <div class="cg">
+          <div class="cc" onclick="togCC(this)" data-val="Indian"><div class="ci">🇮🇳</div><div class="cl">Indian</div></div>
+          <div class="cc" onclick="togCC(this)" data-val="Mediterranean"><div class="ci">🫒</div><div class="cl">Mediterranean</div></div>
+          <div class="cc" onclick="togCC(this)" data-val="Asian"><div class="ci">🍜</div><div class="cl">Asian</div></div>
+          <div class="cc" onclick="togCC(this)" data-val="Keto"><div class="ci">🥑</div><div class="cl">Keto</div></div>
+          <div class="cc" onclick="togCC(this)" data-val="Continental"><div class="ci">🍽️</div><div class="cl">Continental</div></div>
+          <div class="cc" onclick="togCC(this)" data-val="Middle Eastern"><div class="ci">🧆</div><div class="cl">Middle Eastern</div></div>
+          <div class="cc" onclick="togCC(this)" data-val="Mexican"><div class="ci">🌮</div><div class="cl">Mexican</div></div>
+          <div class="cc" onclick="togCC(this)" data-val="Japanese"><div class="ci">🍱</div><div class="cl">Japanese</div></div>
+        </div>
+      </div>
+      <div class="fg"><label>Daily Budget</label><div class="chips">
+        <span class="chip" data-g="budget" onclick="selChip(this)">🟢 Low (₹200-400/day)</span>
+        <span class="chip" data-g="budget" onclick="selChip(this)">🟡 Moderate (₹400-800/day)</span>
+        <span class="chip" data-g="budget" onclick="selChip(this)">🔵 Premium (₹800+/day)</span>
+      </div></div>
+      <div class="fnav"><button class="bback" onclick="goStep(3)">← Back</button><button class="bgen" id="genBtn" onclick="generate()">🚀 Generate My Plan</button></div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="rs">
+      <div class="rh">
+        <h2>Your 7-Day Plan 🌿 <span class="ai-tag" id="aitag">AI</span></h2>
+        <p>Personalized by NutriSync</p>
+        <div class="cb">
+          <div class="ci2"><strong id="rbmr">-</strong>BMR</div>
+          <div class="ci2"><strong id="rtdee">-</strong>TDEE</div>
+          <div class="ci2"><strong id="rcal">-</strong>Target kcal/day</div>
+        </div>
+      </div>
+      <div id="errBox" style="display:none" class="err-box"></div>
+      <div id="planOut"></div>
+      <div class="ract">
+        <button class="bsave" onclick="savePlan()">💾 Save Plan</button>
+        <button class="bredo" onclick="resetForm()">🔄 Regenerate</button>
+        <button class="bsave" style="background:#1a2e1e" onclick="window.location.href='/dashboard'">📊 Dashboard</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  let step=1, hU='cm', wU='kg', lastPlan={};
+
+  // Unit toggles
+  function setHU(u){hU=u;['cm','ft'].forEach(x=>document.getElementById('ht-'+x).classList.toggle('active',x===u));document.getElementById('h-cm').style.display=u==='cm'?'block':'none';document.getElementById('h-ft').style.display=u==='ft'?'grid':'none';}
+  function setWU(u){wU=u;['kg','lb'].forEach(x=>document.getElementById('wt-'+x).classList.toggle('active',x===u));}
+
+  // Chip selection
+  function selChip(el){document.querySelectorAll(`.chip[data-g="${el.dataset.g}"]`).forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+  function togChip(el){el.classList.toggle('sel');}
+  function togCC(el){el.classList.toggle('sel');}
+
+  // Get values
+  function gChip(g){const e=document.querySelector(`.chip.sel[data-g="${g}"]`);return e?e.textContent.replace(/^[^\w]+/,'').trim():'';}
+  function gMulti(container){return[...document.querySelectorAll(`${container} .chip.multi.sel`)].map(c=>c.textContent.replace(/^[^\w]+/,'').trim());}
+  function gCards(){return[...document.querySelectorAll('.cc.sel')].map(c=>c.dataset.val);}
+
+  // Navigation
+  function goStep(n){
+    document.getElementById('step'+step)?.classList.remove('active');
+    document.querySelectorAll('.ps').forEach((el,i)=>{
+      el.classList.remove('active','done');
+      const pc=el.querySelector('.pc');
+      if(i+1<n){el.classList.add('done');pc.textContent='✓';}
+      else if(i+1===n){el.classList.add('active');pc.textContent=i+1;}
+      else pc.textContent=i+1;
+    });
+    step=n;
+    document.getElementById('step'+n)?.classList.add('active');
+    window.scrollTo(0,0);
+  }
+
+  function validate(n){
+    if(n===1){
+      if(!document.getElementById('dob').value){alert('Please enter your date of birth');return false;}
+      if(!gChip('gender')){alert('Please select your gender');return false;}
+      const h=hU==='cm'?parseFloat(document.getElementById('hcm').value):1;
+      if(!h||h<100&&hU==='cm'){alert('Please enter a valid height');return false;}
+      const w=parseFloat(document.getElementById('wt').value);
+      if(!w||w<30){alert('Please enter a valid weight');return false;}
+    }
+    if(n===2){
+      if(!gChip('goal')){alert('Please select a fitness goal');return false;}
+      if(!document.getElementById('activity').value){alert('Please select your activity level');return false;}
+    }
+    return true;
+  }
+
+  function goNext(n){if(validate(n))goStep(n+1);}
+
+  // Collect all form data
+  function collectData(){
+    const dob=document.getElementById('dob').value;
+    const age=dob?Math.floor((new Date()-new Date(dob))/31557600000):25;
+    let hcm=hU==='cm'?parseFloat(document.getElementById('hcm').value)||170:(parseFloat(document.getElementById('hft').value)||5)*30.48+(parseFloat(document.getElementById('hin').value)||7)*2.54;
+    let wkg=parseFloat(document.getElementById('wt').value)||70;
+    if(wU==='lb')wkg*=0.453592;
+    return{
+      age:Math.max(10,Math.min(100,age)),
+      gender:gChip('gender')||'Male',
+      height_cm:Math.round(hcm),
+      weight_kg:Math.round(wkg*10)/10,
+      goal:gChip('goal')||'Maintain Weight',
+      activity:document.getElementById('activity').value||'moderate',
+      medical_conditions:gMulti('#medChips'),
+      dietary_style:gChip('diet'),
+      proteins:gMulti('#proteinChips'),
+      allergies:gMulti('#allergyChips'),
+      cuisines:gCards(),
+      budget:gChip('budget')||'Moderate'
+    };
+  }
+
+  // Animate loading steps
+  function animateLoading(){
+    const steps=[{id:'ls2',text:'✓ Sent to Gemini AI',delay:1200},{id:'ls3',text:'✓ 7-day schedule built',delay:2600},{id:'ls4',text:'✓ Plan finalized',delay:3800}];
+    steps.forEach(({id,text,delay})=>setTimeout(()=>{const el=document.getElementById(id);if(el){el.textContent=text;el.classList.add('done');}},delay));
+  }
+
+  async function generate(){
+    const btn=document.getElementById('genBtn');
+    btn.disabled=true;
+    document.getElementById('lo').classList.add('show');
+    animateLoading();
+    const data=collectData();
+    console.log('Generating plan with data:', data);
+
+    try{
+      const r=await fetch('/api/generate-plan',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+(localStorage.getItem('token')||'')},
+        body:JSON.stringify(data)
+      });
+      console.log('Response status:', r.status);
+      if(!r.ok){
+        const err=await r.json();
+        throw new Error(err.detail||`HTTP ${r.status}`);
+      }
+      const res=await r.json();
+      console.log('Plan received:', res);
+      lastPlan={...res, goal:data.goal};
+      showResult(res);
+    }catch(e){
+      console.error('Generate error:', e);
+      document.getElementById('lo').classList.remove('show');
+      btn.disabled=false;
+      // Still show result using client-side fallback
+      const bmi_data=collectData();
+      const bmr=Math.round(10*bmi_data.weight_kg+6.25*bmi_data.height_cm-5*bmi_data.age+(bmi_data.gender==='Male'?5:-161));
+      const mf={sedentary:1.2,light:1.375,moderate:1.55,very:1.725,extra:1.9}[bmi_data.activity]||1.55;
+      const tdee=Math.round(bmr*mf);
+      const goal=bmi_data.goal.toLowerCase();
+      const target=goal.includes('loss')?tdee-500:goal.includes('gain')||goal.includes('muscle')?tdee+300:tdee;
+      const fallback={bmr,tdee,target_calories:target,used_ai:false,error:e.message,plan:clientFallback(target,bmi_data)};
+      lastPlan={...fallback,goal:bmi_data.goal};
+      showResult(fallback);
+      return;
+    }
+    document.getElementById('lo').classList.remove('show');
+    btn.disabled=false;
+  }
+
+  function clientFallback(cal, d){
+    const days=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+    const b=Math.round(cal*.25),l=Math.round(cal*.30),dn=Math.round(cal*.28),s=Math.round(cal*.085);
+    const ind=!d.cuisines||d.cuisines.includes('Indian')||d.cuisines.length===0;
+    const veg=d.dietary_style?.includes('Vegetarian')||d.dietary_style?.includes('Vegan');
+    const ck=!veg&&d.proteins?.includes('Chicken');
+    const sf=!veg&&d.proteins?.includes('Seafood');
+    const eg=!veg&&d.proteins?.includes('Eggs');
+    const sets=[
+      [{type:'Breakfast',name:ind?'Poha with peanuts & veggies':'Oats with banana & nuts',cal:b,ingredients:ind?['Poha','Peanuts','Mustard seeds']:['Oats','Banana','Honey']},
+       {type:'Mid-Morning',name:'Seasonal fruit',cal:s,ingredients:['Apple','Orange']},
+       {type:'Lunch',name:ck?'Chicken rice bowl':ind?'Dal tadka + brown rice':'Chickpea salad',cal:l,ingredients:ck?['Chicken','Rice','Spices']:ind?['Dal','Brown rice','Ghee']:['Chickpeas','Olive oil','Greens']},
+       {type:'Evening',name:ind?'Roasted chana chaat':'Mixed nuts',cal:s,ingredients:ind?['Chana','Lemon','Chaat masala']:['Almonds','Walnuts']},
+       {type:'Dinner',name:sf?'Grilled fish + veggies':ind?'Paneer bhurji + roti':'Lentil soup',cal:dn,ingredients:sf?['Fish','Broccoli','Olive oil']:ind?['Paneer','Capsicum','Roti']:['Lentils','Bread','Olive oil']}],
+      [{type:'Breakfast',name:eg?'Masala omelette':ind?'Idli + sambar':'Smoothie bowl',cal:b,ingredients:eg?['Eggs','Onion','Green chilli']:ind?['Idli','Sambar','Chutney']:['Banana','Berries','Granola']},
+       {type:'Mid-Morning',name:'Almonds & walnuts',cal:s,ingredients:['Almonds','Walnuts']},
+       {type:'Lunch',name:ind?'Rajma chawal':'Quinoa veggie bowl',cal:l,ingredients:ind?['Rajma','Rice','Onion']:['Quinoa','Avocado','Greens']},
+       {type:'Evening',name:'Sprouts chaat',cal:s,ingredients:['Sprouts','Tomato','Lemon']},
+       {type:'Dinner',name:ind?'Palak paneer + roti':'Stir fry tofu + rice',cal:dn,ingredients:ind?['Spinach','Paneer','Cream']:['Tofu','Veggies','Soy sauce']}]
+    ];
+    return days.map((day,i)=>({day,meals:sets[i%2]}));
+  }
+
+  function showResult(res){
+    document.querySelectorAll('.fs').forEach(s=>s.classList.remove('active'));
+    document.getElementById('rs').classList.add('show');
+    document.getElementById('aitag').textContent = res.used_ai ? '✨ Gemini AI' : '📋 Smart Plan';
+    document.getElementById('rbmr').textContent=res.bmr||'-';
+    document.getElementById('rtdee').textContent=res.tdee||'-';
+    document.getElementById('rcal').textContent=res.target_calories||'-';
+
+    if(res.error&&!res.used_ai){
+      document.getElementById('errBox').style.display='block';
+      document.getElementById('errBox').textContent='ℹ️ Using smart fallback plan (AI error: '+res.error+')';
+    }
+
+    const out=document.getElementById('planOut');
+    out.innerHTML='';
+    (res.plan||[]).forEach(day=>{
+      const div=document.createElement('div');
+      div.className='dp';
+      div.innerHTML=`<h3>${day.day}</h3>${(day.meals||[]).map(m=>`
+        <div class="mi">
+          <div>
+            <div class="mname">${m.name}</div>
+            <div class="mtype">${m.type}</div>
+            ${m.ingredients?`<div class="ingr">🧂 ${Array.isArray(m.ingredients)?m.ingredients.join(', '):m.ingredients}</div>`:''}
+          </div>
+          <div class="mcal">${m.cal} kcal</div>
+        </div>`).join('')}`;
+      out.appendChild(div);
+    });
+    window.scrollTo(0,0);
+  }
+
+  async function savePlan(){
+    if(!localStorage.getItem('token')){
+      if(confirm('Please login to save your plan. Go to login page?'))window.location.href='/';
+      return;
+    }
+    try{
+      const r=await fetch('/api/save-plan',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+localStorage.getItem('token')},body:JSON.stringify(lastPlan)});
+      if(r.ok)alert('✅ Plan saved to your dashboard!');
+      else alert('Could not save');
+    }catch{alert('Server error');}
+  }
+
+  function resetForm(){
+    document.getElementById('rs').classList.remove('show');
+    document.getElementById('errBox').style.display='none';
+    // Reset loading steps
+    ['ls2','ls3','ls4'].forEach((id,i)=>{const el=document.getElementById(id);if(el){el.classList.remove('done');el.textContent=['⟳ Sending to Gemini AI...','⟳ Building 7-day schedule...','⟳ Finalizing your plan...'][i];}});
+    goStep(1);
+  }
+</script>
+</body>
+</html>
