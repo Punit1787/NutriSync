@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  // Auto-detect API base: use Render URL when hosted, localhost when developing
+  window.API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000'
+    : 'https://nutrisync-qyhv.onrender.com';
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>NutriSync – Sync Your Meals. Energize Your Life.</title>
@@ -269,7 +275,7 @@ async function loginUser(){
   document.getElementById('loginBtn').disabled=true;
   document.getElementById('loginBtn').textContent='Logging in...';
   try{
-    const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+    const r=await fetch(window.API_BASE + '/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
     const d=await r.json();
     if(r.ok){
       localStorage.setItem('token',d.token);
@@ -297,7 +303,7 @@ async function signupUser(){
   document.getElementById('signupBtn').disabled=true;
   document.getElementById('signupBtn').textContent='Creating account...';
   try{
-    const r=await fetch('/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password})});
+    const r=await fetch(window.API_BASE + '/api/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,email,password})});
     const d=await r.json();
     if(r.ok){
       localStorage.setItem('token',d.token);
@@ -321,7 +327,7 @@ let googleClientId = '';
 
 async function initGoogleSignIn(){
   try{
-    const r = await fetch('/api/google-client-id');
+    const r = await fetch(window.API_BASE + '/api/google-client-id');
     const d = await r.json();
     googleClientId = d.client_id || '';
     if(googleClientId){
@@ -348,7 +354,7 @@ async function initGoogleSignIn(){
 async function handleGoogleSignIn(response){
   const alertId = document.getElementById('loginModal').classList.contains('open') ? 'lAlert' : 'sAlert';
   try{
-    const r = await fetch('/api/google-login',{
+    const r = await fetch(window.API_BASE + '/api/google-login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({credential: response.credential})
