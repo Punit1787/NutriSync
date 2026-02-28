@@ -1589,4 +1589,4 @@ if __name__ == "__main__":
     print("📌 /api/health  ← status check")
     print("📌 /api/analyse-image  ← NEW food image analyser")
     print("="*50 + "\n")
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+   
