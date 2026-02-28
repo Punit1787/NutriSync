@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://nutrisync-api.onrender.com/api/:path*"
+    }
+  ]
+}

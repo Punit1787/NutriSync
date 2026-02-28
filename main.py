@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional, List
-import hashlib, secrets, json, os, re, urllib.request, urllib.error, base64
+import hashlib, secrets, json, os, re, urllib.request, urllib.error, base64, ssl
 from datetime import datetime
-from models import init_db, get_db, User, MealPlan
+from models import init_db, get_db, User, MealPlan, FoodLog
 from sqlalchemy.orm import Session
 
 # ─── LOAD .env ────────────────────────────────────────────
@@ -456,7 +456,7 @@ def enforce_dietary_protein_consistency(req: PlanRequest) -> dict:
         removed = [p for p in proteins if p.lower() in vegan_exc]
         proteins = [p for p in proteins if p.lower() not in vegan_exc]
         if removed: warnings.append(f"Vegan diet: removed {', '.join(removed)}")
-    elif "vegetarian" in style:
+    elif style == "vegetarian":
         removed = [p for p in proteins if p.lower() in animal_p]
         proteins = [p for p in proteins if p.lower() not in animal_p]
         if removed: warnings.append(f"Vegetarian diet: removed {', '.join(removed)}")
@@ -480,24 +480,43 @@ def enforce_dietary_protein_consistency(req: PlanRequest) -> dict:
     return {"proteins": proteins, "warnings": warnings}
 
 # ─── GEMINI CALLS ─────────────────────────────────────────
+def _ssl_ctx():
+    """Return an SSL context that works on macOS without cert bundle issues."""
+    try:
+        import certifi
+        ctx = ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        ctx = ssl._create_unverified_context()
+    return ctx
+
 def call_gemini_text(prompt: str) -> str:
+    import time
     url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-           f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}")
+           f"gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}")
     body = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.7, "maxOutputTokens": 6000}
     }).encode()
-    req = urllib.request.Request(url, data=body,
-                                 headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=60) as r:
-        d = json.loads(r.read())
-    return d["candidates"][0]["content"]["parts"][0]["text"]
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(url, data=body,
+                                         headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=60, context=_ssl_ctx()) as r:
+                d = json.loads(r.read())
+            return d["candidates"][0]["content"]["parts"][0]["text"]
+        except urllib.error.HTTPError as e:
+            if e.code == 429 and attempt < 2:
+                wait = 15 * (attempt + 1)
+                print(f"⏳ Gemini rate limit — waiting {wait}s (attempt {attempt+1}/3)")
+                time.sleep(wait)
+            else:
+                raise
 
 
 def call_gemini_vision(prompt: str, image_b64: str, mime_type: str = "image/jpeg") -> str:
     """Call Gemini Vision with an image + text prompt."""
     url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-           f"gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}")
+           f"gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}")
     body = json.dumps({
         "contents": [{
             "parts": [
@@ -507,11 +526,21 @@ def call_gemini_vision(prompt: str, image_b64: str, mime_type: str = "image/jpeg
         }],
         "generationConfig": {"temperature": 0.4, "maxOutputTokens": 3000}
     }).encode()
-    req = urllib.request.Request(url, data=body,
-                                 headers={"Content-Type": "application/json"}, method="POST")
-    with urllib.request.urlopen(req, timeout=60) as r:
-        d = json.loads(r.read())
-    return d["candidates"][0]["content"]["parts"][0]["text"]
+    for attempt in range(3):
+        try:
+            req = urllib.request.Request(url, data=body,
+                                         headers={"Content-Type": "application/json"}, method="POST")
+            with urllib.request.urlopen(req, timeout=60, context=_ssl_ctx()) as r:
+                d = json.loads(r.read())
+            return d["candidates"][0]["content"]["parts"][0]["text"]
+        except urllib.error.HTTPError as e:
+            import time
+            if e.code == 429 and attempt < 2:
+                wait = 15 * (attempt + 1)
+                print(f"⏳ Gemini vision rate limit — waiting {wait}s")
+                time.sleep(wait)
+            else:
+                raise
 
 # ─── IMAGE ANALYSIS PROMPT ────────────────────────────────
 def build_image_analysis_prompt(allergies: List[str], dietary_style: str,
@@ -736,13 +765,74 @@ Generate all 7 days × 5 meals (Breakfast, Mid-Morning, Lunch, Evening, Dinner).
 
     return SYSTEM + USER_DATA + OUTPUT_SPEC
 
+
+# ─── INGREDIENT HELPERS ──────────────────────────────────
+_ING_CALS = {
+    # proteins (per 100g cooked)
+    "chicken breast": 165, "chicken": 165, "eggs": 155, "egg": 155,
+    "prawns": 99, "prawn": 99, "fish fillet": 120, "fish": 120, "salmon": 208,
+    "tuna": 132, "mutton": 258, "beef": 250, "lean beef strips": 250,
+    "pork tenderloin": 143, "pork": 143, "turkey breast": 135, "turkey": 135,
+    "paneer": 265, "tofu": 76, "chickpeas": 164, "moong dal": 105, "masoor dal": 116,
+    "toor dal": 116, "idli batter": 58, "moong sprouts": 30,
+    # carbs
+    "brown rice": 112, "basmati rice": 121, "white rice": 130, "quinoa": 120,
+    "sweet potato": 86, "cauliflower": 25, "oats": 389,
+    # dairy
+    "milk": 61, "yogurt": 59, "dahi": 61, "curd": 61, "butter": 717, "ghee": 900,
+    "cheese": 402, "cream": 340, "whey": 352,
+    # fats
+    "olive oil": 884, "coconut oil": 862, "almonds": 579, "flaxseeds": 534,
+    # vegs (low cal)
+    "spinach": 23, "broccoli": 34, "capsicum": 31, "onion": 40, "tomato": 18,
+    "green chilli": 40, "garlic": 149, "ginger": 80, "coriander": 23,
+    "curry leaves": 108, "tamarind": 239, "lemon": 29, "lime": 30,
+    # spices (negligible)
+    "turmeric": 0, "cumin": 0, "pepper": 0, "mustard seeds": 0,
+    "chaat masala": 0, "spices": 0, "herbs": 0, "rosemary": 0,
+    # fruits/snacks
+    "banana": 89, "apple": 52, "mixed greens": 20, "cherry tomato": 18,
+    "roasted chana": 364,
+    # misc
+    "coconut milk": 230, "mixed vegetables": 65,
+}
+_ING_QTY = {
+    "chicken breast": "150g", "chicken": "150g", "eggs": "2 eggs",
+    "prawns": "120g", "prawn": "120g", "fish fillet": "150g", "fish": "150g",
+    "mutton": "120g", "beef": "120g", "lean beef strips": "120g",
+    "pork tenderloin": "130g", "turkey breast": "130g",
+    "paneer": "100g", "brown rice": "80g dry", "basmati rice": "80g dry",
+    "quinoa": "70g dry", "sweet potato": "150g", "oats": "60g",
+    "olive oil": "1 tbsp", "coconut oil": "1 tbsp", "butter": "10g",
+    "almonds": "20g", "banana": "1 medium", "apple": "1 medium",
+    "onion": "1 medium", "tomato": "1 medium", "garlic": "3 cloves",
+    "spinach": "60g", "broccoli": "80g",
+}
+def _ing_qty(name):
+    n = name.lower()
+    for k, v in _ING_QTY.items():
+        if k in n: return v
+    return "as needed"
+
+def _ing_cal(name, meal_cal, n_ings):
+    n = name.lower()
+    for k, v in _ING_CALS.items():
+        if k in n:
+            # Estimate based on typical portion
+            if v > 500: return round(v * 0.015 * 100) // 100 * 1  # oils ~13g
+            if v > 200: return round(v * 0.10)   # dense foods 100g
+            if v > 100: return round(v * 0.15)   # moderate density
+            return round(v * 0.08)               # vegs/spices small portion
+    return round(meal_cal / max(n_ings, 1))  # fallback only if unknown
+
 # ─── SMART FALLBACK (full non-veg support) ────────────────
 def make_fallback(target, req, adjusted_proteins, blocklist):
     days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
-    B = round(target*0.24); L = round(target*0.32); D = round(target*0.29); S = round(target*0.075)
+    # Realistic calorie splits: B=25%, L=35%, D=30%, Snacks=10% (split ~5% each)
+    B = round(target*0.25); L = round(target*0.35); D = round(target*0.30); S = round(target*0.05)
 
     style    = (req.dietary_style or "").lower()
-    is_veg   = "vegetarian" in style or "vegan" in style
+    is_veg   = style == "vegetarian" or "vegan" in style
     is_vegan = "vegan" in style
     is_pesc  = "pescatarian" in style
     ap_lower = [p.lower() for p in adjusted_proteins]
@@ -761,6 +851,9 @@ def make_fallback(target, req, adjusted_proteins, blocklist):
     dairy_ok = not is_vegan and ok("milk")
     paneer_ok = dairy_ok and ok("paneer")
     indian = not req.cuisines or "Indian" in req.cuisines
+    mediterranean = not req.cuisines or "Mediterranean" in req.cuisines
+    asian = not req.cuisines or "Asian" in req.cuisines or "Chinese" in req.cuisines or "Japanese" in req.cuisines
+    western = not req.cuisines or not indian  # if non-indian selected, use western
 
     allergies_str = ', '.join(req.allergies) if req.allergies else 'none'
     allergy_ok_msg = f"✓ Confirmed safe — no {allergies_str} present"
@@ -771,8 +864,8 @@ def make_fallback(target, req, adjusted_proteins, blocklist):
         if not safe: safe = ["Brown rice","Lentils","Olive oil"]
         return {
             "type": type_, "name": name, "cal": cal,
-            "ingredients": [{"name": i, "quantity": "as needed",
-                             "calories": round(cal/len(safe))} for i in safe],
+            "ingredients": [{"name": i, "quantity": _ing_qty(i),
+                             "calories": _ing_cal(i, cal, len(safe))} for i in safe],
             "macronutrients": {"protein": prot,"carbohydrates": carb,"fats": fat},
             "micronutrients_highlight": micros,
             "explainability": {
@@ -784,55 +877,122 @@ def make_fallback(target, req, adjusted_proteins, blocklist):
 
     # ─── Breakfast pool ───────────────────────────────────
     def bfast(day_idx):
-        i = day_idx % 4
+        # 7 distinct breakfasts cycling – non-indian fallbacks when indian not selected
+        i = day_idx % 7
         if i == 0 and eg:
             return meal("Breakfast","Masala scrambled eggs",B,
                 ["Eggs","Onion","Tomato","Green chilli","Turmeric","Coriander","Olive oil"],
                 "18g","10g","14g",["B12","Choline","Selenium"],
-                "High-protein egg breakfast","Complete amino acids and choline for brain function",
+                "High-protein egg breakfast","Complete amino acids and choline",
                 f"Protein-forward start supporting {req.goal}",
                 ["Beat eggs with turmeric and salt","Sauté onion, tomato, chilli 3 mins",
-                 "Pour eggs into pan on medium heat","Stir continuously until just set",
-                 "Garnish coriander, serve immediately"],"10 mins","Easy")
-        elif i == 1 and sf and eg:
-            return meal("Breakfast","Prawn & egg scramble",B,
-                ["Prawns","Eggs","Capsicum","Garlic","Olive oil","Pepper"],
-                "26g","8g","12g",["B12","Omega-3","Iodine"],
-                "High-protein seafood breakfast","Complete protein from two high-quality sources",
-                f"Powerful protein start for {req.goal}",
-                ["Sauté prawns with garlic 2 mins","Beat eggs, pour over prawns",
-                 "Add capsicum and stir","Cook on low until eggs just set",
-                 "Season with pepper and serve"],"15 mins","Easy")
+                 "Pour eggs into pan","Stir until just set","Garnish coriander"],"10 mins","Easy")
+        elif i == 1 and ck:
+            name = "Chicken omelette" if not indian else "Chicken keema omelette"
+            return meal("Breakfast",name,B,
+                ["Eggs","Chicken","Onion","Capsicum","Garlic","Olive oil","Pepper"],
+                "28g","8g","15g",["B12","Protein","Selenium"],
+                "High-protein chicken & egg breakfast","Two complete protein sources",
+                f"Power breakfast for {req.goal}",
+                ["Mince or shred cooked chicken","Beat eggs with salt and pepper",
+                 "Sauté garlic, onion 2 mins","Add chicken, cook 2 mins",
+                 "Pour eggs over, fold omelette","Serve with toast or salad"],"15 mins","Easy")
+        elif i == 2 and (not indian) and eg:
+            return meal("Breakfast","Avocado egg toast",B,
+                ["Eggs","Mixed greens","Tomato","Olive oil","Garlic","Pepper"],
+                "16g","28g","12g",["B12","Healthy Fats","Fiber"],
+                "Western-style high-fibre breakfast","Healthy fats with complete protein",
+                f"Balanced morning meal for {req.goal}",
+                ["Toast whole grain bread","Mash vegetables with olive oil and seasoning",
+                 "Fry or poach eggs","Layer on toast","Season with pepper"],"10 mins","Easy")
         elif i == 2 and dairy_ok and indian:
             return meal("Breakfast","Idli with sambar",B,
                 ["Idli batter","Toor dal","Tomato","Tamarind","Curry leaves","Mustard seeds","Turmeric"],
                 "10g","42g","3g",["Iron","B Vitamins","Probiotics"],
-                "Fermented, gut-friendly South Indian breakfast","Probiotics from fermentation, plant protein from dal",
-                f"Light, digestible start supporting {req.goal}",
-                ["Steam idlis 12-15 mins in mould","Boil dal with tomato and tamarind",
-                 "Prepare tadka with mustard seeds and curry leaves",
-                 "Add tadka to sambar, simmer 2 mins",
-                 "Serve hot idlis with sambar and chutney"],"25 mins","Easy")
+                "Fermented South Indian breakfast","Probiotics + plant protein",
+                f"Light digestible start for {req.goal}",
+                ["Steam idlis 12-15 mins","Boil dal with tomato and tamarind",
+                 "Prepare mustard-curry leaf tadka","Add to sambar, simmer 2 mins",
+                 "Serve with coconut chutney"],"25 mins","Easy")
+        elif i == 3 and sf and eg:
+            return meal("Breakfast","Prawn & egg scramble",B,
+                ["Prawns","Eggs","Capsicum","Garlic","Olive oil","Pepper"],
+                "26g","8g","12g",["B12","Omega-3","Iodine"],
+                "High-protein seafood breakfast","Complete protein from two sources",
+                f"Powerful start for {req.goal}",
+                ["Sauté prawns with garlic 2 mins","Beat eggs, pour over prawns",
+                 "Add capsicum and stir","Cook on low until just set",
+                 "Season with pepper and serve"],"15 mins","Easy")
+        elif i == 4 and dairy_ok and not indian:
+            return meal("Breakfast","Greek yogurt & oats bowl",B,
+                ["Oats","Yogurt","Banana","Almonds","Flaxseeds"],
+                "14g","52g","8g",["Calcium","Fiber","Omega-3"],
+                "High-fiber Western breakfast","Probiotic yogurt with complex carbs",
+                f"Sustained energy for {req.goal}",
+                ["Cook oats with water or milk 5 mins","Slice banana",
+                 "Top oats with yogurt","Add banana, almonds, flaxseeds",
+                 "Drizzle honey if desired"],"10 mins","Easy")
+        elif i == 4 and indian:
+            return meal("Breakfast","Poha with peanuts",B,
+                ["Poha","Onion","Tomato","Peanuts","Mustard seeds","Curry leaves","Turmeric"],
+                "8g","48g","6g",["Iron","B Vitamins","Fiber"],
+                "Light flattened rice breakfast","Iron-rich quick breakfast",
+                f"Light energising start for {req.goal}",
+                ["Rinse poha and drain","Sauté mustard seeds, curry leaves",
+                 "Add onion, tomato, turmeric","Mix in poha and peanuts",
+                 "Cook 3 mins, garnish coriander"],"15 mins","Easy")
+        elif i == 5 and eg and not indian:
+            return meal("Breakfast","Veggie egg muffins",B,
+                ["Eggs","Spinach","Capsicum","Onion","Cheese","Olive oil","Pepper"],
+                "20g","10g","14g",["B12","Calcium","Iron"],
+                "Meal-prep friendly protein breakfast","Portable protein-packed breakfast",
+                f"Macro-controlled breakfast for {req.goal}",
+                ["Preheat oven 180°C","Whisk eggs with salt and pepper",
+                 "Chop and sauté vegetables 3 mins","Fill muffin tin with veg then egg mix",
+                 "Bake 18-20 mins until set"],"25 mins","Medium")
+        elif i == 5 and indian:
+            return meal("Breakfast","Upma with vegetables",B,
+                ["Semolina","Onion","Tomato","Carrot","Peas","Mustard seeds","Ghee"],
+                "9g","44g","7g",["B Vitamins","Fiber","Iron"],
+                "Traditional Indian semolina breakfast","Complex carbs with vegetables",
+                f"Light filling breakfast for {req.goal}",
+                ["Dry roast semolina golden, set aside","Heat ghee, add mustard seeds",
+                 "Sauté onion, carrot, peas 4 mins","Add water, bring to boil",
+                 "Stir in semolina, cook 3 mins"],"20 mins","Easy")
+        elif i == 6 and ck and not indian:
+            return meal("Breakfast","Chicken & spinach wrap",B,
+                ["Chicken","Spinach","Tomato","Yogurt","Whole wheat wrap","Garlic","Olive oil"],
+                "30g","32g","10g",["Protein","Iron","Calcium"],
+                "High-protein wrap breakfast","Lean protein with iron-rich greens",
+                f"Filling power breakfast for {req.goal}",
+                ["Season and grill chicken strips","Warm wrap briefly",
+                 "Mix yogurt with garlic as sauce","Layer chicken, spinach, tomato",
+                 "Roll and serve warm"],"20 mins","Easy")
         else:
             return meal("Breakfast","Moong dal chilla",B,
                 ["Moong dal","Onion","Tomato","Green chilli","Cumin","Turmeric","Coconut oil"],
                 "14g","38g","6g",["Iron","Folate","Fiber"],
-                "High-protein vegan-friendly savoury pancake","Plant protein and complex carbs",
+                "High-protein savoury pancake","Plant protein with complex carbs",
                 f"Sustained morning energy for {req.goal}",
-                ["Soak moong dal 2 hours, drain and grind smooth","Add onion, tomato, chilli, spices to batter",
-                 "Heat pan, pour batter into thin circle","Cook 3 mins until bubbles form",
-                 "Flip and cook 2 mins, serve with chutney"],"20 mins","Easy")
+                ["Soak moong dal 2 hours, drain and grind smooth",
+                 "Add onion, tomato, chilli, spices","Heat pan, pour thin batter",
+                 "Cook 3 mins until bubbles form","Flip, cook 2 mins more"],"20 mins","Easy")
 
     # ─── Lunch pool ───────────────────────────────────────
     def lunch(day_idx):
         opts = []
-        if ck:  opts.append("chicken")
-        if mt:  opts.append("mutton")
-        if bf:  opts.append("beef")
-        if pk:  opts.append("pork")
-        if sf:  opts.append("seafood")
-        if tk:  opts.append("turkey")
-        if dk:  opts.append("duck")
+        # Pescatarian: seafood dominates, only veg if no seafood
+        if is_pesc and sf:
+            opts = ["seafood", "seafood", "seafood", "seafood", "seafood"]
+        else:
+            # Non-veg: meat at every lunch, doubled chicken weight
+            if ck:  opts.extend(["chicken", "chicken"])
+            if mt:  opts.append("mutton")
+            if bf:  opts.append("beef")
+            if pk:  opts.append("pork")
+            if sf:  opts.append("seafood")
+            if tk:  opts.append("turkey")
+            if dk:  opts.append("duck")
         if not opts:
             # Veg lunch
             if paneer_ok:
@@ -911,12 +1071,17 @@ def make_fallback(target, req, adjusted_proteins, blocklist):
     # ─── Dinner pool ──────────────────────────────────────
     def dinner(day_idx):
         opts = []
-        if sf: opts.append("seafood")
-        if ck: opts.append("chicken")
-        if mt: opts.append("mutton")
-        if bf: opts.append("beef")
-        if pk: opts.append("pork")
-        if dk: opts.append("duck")
+        # Pescatarian: seafood at every dinner
+        if is_pesc and sf:
+            opts = ["seafood", "seafood", "seafood", "seafood", "seafood"]
+        else:
+            # Non-veg: rotate meat proteins, seafood included
+            if sf: opts.append("seafood")
+            if ck: opts.extend(["chicken", "chicken"])
+            if mt: opts.append("mutton")
+            if bf: opts.append("beef")
+            if pk: opts.append("pork")
+            if dk: opts.append("duck")
         if not opts:
             if paneer_ok:
                 return meal("Dinner","Palak paneer with cauliflower rice",D,
@@ -1018,18 +1183,46 @@ def make_fallback(target, req, adjusted_proteins, blocklist):
                     f"Aligned with {req.goal}",
                     ["Prepare ingredients","Mix or chop","Season lightly","Serve fresh"],"5 mins","Easy")
 
+    # Build plan ensuring no meal name repeats within 2 consecutive days
     plan = []
+    breakfast_history, lunch_history, dinner_history = [], [], []
+
     for i, day in enumerate(days):
+        # Non-repeating breakfast
+        bf_meal = None
+        for attempt in range(5):
+            candidate = bfast((i + attempt) % 7)
+            if candidate["name"] not in breakfast_history[-2:]:
+                bf_meal = candidate; break
+        if not bf_meal: bf_meal = bfast(i)
+        breakfast_history.append(bf_meal["name"])
+
+        # Non-repeating lunch — rotate protein type each day
+        lc_meal = None
+        for attempt in range(7):
+            candidate = lunch((i + attempt) % 7)
+            if candidate["name"] not in lunch_history[-2:]:
+                lc_meal = candidate; break
+        if not lc_meal: lc_meal = lunch(i)
+        lunch_history.append(lc_meal["name"])
+
+        # Non-repeating dinner
+        dn_meal = None
+        for attempt in range(7):
+            candidate = dinner((i + attempt) % 7)
+            if candidate["name"] not in dinner_history[-2:]:
+                dn_meal = candidate; break
+        if not dn_meal: dn_meal = dinner(i)
+        dinner_history.append(dn_meal["name"])
+
+        snack1 = snack((i * 2) % len(snacks), "Mid-Morning")
+        snack2 = snack((i * 2 + 1) % len(snacks), "Evening")
+        day_total = bf_meal["cal"] + snack1["cal"] + lc_meal["cal"] + snack2["cal"] + dn_meal["cal"]
+
         plan.append({
             "day": day,
-            "total_day_calories": target,
-            "meals": [
-                bfast(i),
-                snack(i, "Mid-Morning"),
-                lunch(i),
-                snack((i+3) % len(snacks), "Evening"),
-                dinner(i),
-            ]
+            "total_day_calories": day_total,
+            "meals": [bf_meal, snack1, lc_meal, snack2, dn_meal]
         })
     return plan
 
@@ -1126,6 +1319,267 @@ def save_plan(plan_data: dict, user=Depends(get_user), db: Session = Depends(get
                   created_at=datetime.utcnow())
     db.add(mp); db.commit()
     return {"message": "Saved", "id": mp.id}
+
+
+# ─── PYDANTIC MODELS FOR NEW ENDPOINTS ───────────────────
+class FoodLogRequest(BaseModel):
+    meal_name: str
+    calories: float = 0
+    protein: float = 0
+    carbs: float = 0
+    fats: float = 0
+    fiber: float = 0
+    meal_type: str = "Meal"
+    logged_date: Optional[str] = None
+    notes: Optional[str] = None
+    image_analysis: Optional[str] = None
+
+class RegenMealRequest(BaseModel):
+    day: str
+    meal_type: str
+    goal: str = "Maintain Weight"
+    dietary_style: str = ""
+    proteins: List[str] = []
+    allergies: List[str] = []
+    cuisines: List[str] = []
+    target_calories: int = 2000
+    exclude_names: List[str] = []
+
+class UpdatePlanRequest(BaseModel):
+    food_name: str
+    calories: float
+    protein: float
+    carbs: float
+    fats: float
+    day_index: int
+    remaining_days: List[str]
+    current_plan: List[dict]
+    goal: str = "Maintain Weight"
+    dietary_style: str = ""
+    proteins: List[str] = []
+    allergies: List[str] = []
+    target_calories: int = 2000
+
+# ─── LOG FOOD ENDPOINT ───────────────────────────────────
+@app.post("/api/log-food")
+def log_food(req: FoodLogRequest, user=Depends(get_user), db: Session = Depends(get_db)):
+    if not user: raise HTTPException(401, "Not authenticated")
+    entry = FoodLog(
+        user_id=user.id,
+        meal_name=req.meal_name,
+        calories=req.calories,
+        protein=req.protein,
+        carbs=req.carbs,
+        fats=req.fats,
+        fiber=req.fiber,
+        meal_type=req.meal_type,
+        logged_date=req.logged_date or datetime.utcnow().strftime("%Y-%m-%d"),
+        notes=req.notes,
+        image_analysis=req.image_analysis
+    )
+    db.add(entry); db.commit()
+    return {"message": "Logged", "id": entry.id}
+
+# ─── MONTHLY SUMMARY ENDPOINT ────────────────────────────
+@app.get("/api/food-logs/monthly-summary")
+def monthly_summary(month: Optional[str] = None, user=Depends(get_user), db: Session = Depends(get_db)):
+    if not user: raise HTTPException(401, "Not authenticated")
+    if not month:
+        month = datetime.utcnow().strftime("%Y-%m")
+    year, mo = month.split("-")
+    # Get all logs for this month
+    logs = db.query(FoodLog).filter(
+        FoodLog.user_id == user.id,
+        FoodLog.logged_date.like(f"{month}%")
+    ).all()
+
+    if not logs:
+        return {
+            "days_logged": 0, "avg_daily_calories": 0,
+            "total_protein": 0, "total_fiber": 0,
+            "total_carbs": 0, "total_fats": 0,
+            "avg_daily_protein": 0, "daily": [], "warnings": []
+        }
+
+    # Aggregate by date
+    by_date = {}
+    for log in logs:
+        d = log.logged_date
+        if d not in by_date:
+            by_date[d] = {"date": d, "calories": 0, "protein": 0, "carbs": 0, "fats": 0, "fiber": 0}
+        by_date[d]["calories"] += log.calories or 0
+        by_date[d]["protein"] += log.protein or 0
+        by_date[d]["carbs"] += log.carbs or 0
+        by_date[d]["fats"] += log.fats or 0
+        by_date[d]["fiber"] += log.fiber or 0
+
+    daily = sorted(by_date.values(), key=lambda x: x["date"])
+    days = len(daily)
+    total_cal = sum(d["calories"] for d in daily)
+    total_prot = round(sum(d["protein"] for d in daily), 1)
+    total_carbs = round(sum(d["carbs"] for d in daily), 1)
+    total_fats = round(sum(d["fats"] for d in daily), 1)
+    total_fiber = round(sum(d["fiber"] for d in daily), 1)
+    avg_cal = round(total_cal / days) if days else 0
+    avg_prot = round(total_prot / days, 1) if days else 0
+
+    # Health warnings
+    warnings = []
+    if avg_cal > 0 and avg_cal < 1200:
+        warnings.append({"level": "danger", "icon": "🚨", "title": "Very Low Calorie Intake",
+            "message": f"Averaging {avg_cal} kcal/day. Minimum recommended is 1200 kcal. Risk of nutrient deficiency."})
+    if avg_cal > 3500:
+        warnings.append({"level": "warning", "icon": "⚠️", "title": "High Calorie Intake",
+            "message": f"Averaging {avg_cal} kcal/day which is quite high. Check your portions."})
+    if avg_prot < 40 and days >= 3:
+        warnings.append({"level": "warning", "icon": "💪", "title": "Low Protein",
+            "message": f"Only {avg_prot}g protein/day on average. Aim for at least 50–60g daily."})
+    if total_fiber / days < 15 and days >= 3:
+        warnings.append({"level": "info", "icon": "🌾", "title": "Low Fiber",
+            "message": f"Averaging {round(total_fiber/days,1)}g fiber/day. Target is 25–30g for gut health."})
+
+    return {
+        "month": month, "days_logged": days,
+        "avg_daily_calories": avg_cal, "avg_daily_protein": avg_prot,
+        "total_protein": total_prot, "total_carbs": total_carbs,
+        "total_fats": total_fats, "total_fiber": total_fiber,
+        "daily": [{"date": d["date"], "calories": round(d["calories"]), "protein": round(d["protein"],1)} for d in daily],
+        "warnings": warnings
+    }
+
+# ─── REGENERATE SINGLE MEAL ──────────────────────────────
+@app.post("/api/regenerate-meal")
+def regenerate_meal(req: RegenMealRequest, user=Depends(get_user), db: Session = Depends(get_db)):
+    blocklist = build_blocklist(req.allergies, req.dietary_style)
+    conflict = enforce_dietary_protein_consistency(
+        type("R", (), {"proteins": req.proteins, "dietary_style": req.dietary_style, "allergies": req.allergies})()
+    )
+    adj_proteins = conflict["proteins"]
+
+    style = (req.dietary_style or "").lower()
+    is_pesc = "pescatarian" in style
+    is_veg = style == "vegetarian" or "vegan" in style
+    B = round(req.target_calories * 0.25)
+    L = round(req.target_calories * 0.35)
+    D = round(req.target_calories * 0.30)
+    S = round(req.target_calories * 0.05)
+    cal_map = {"Breakfast": B, "Lunch": L, "Dinner": D, "Mid-Morning": S, "Evening": S, "Snack": S}
+    target_cal = cal_map.get(req.meal_type, L)
+
+    exclude_str = ", ".join(req.exclude_names[:20]) if req.exclude_names else "none"
+    proteins_str = ", ".join(adj_proteins) if adj_proteins else "plant-based"
+    blocklist_str = ", ".join(sorted(set(blocklist))) if blocklist else "none"
+
+    if GEMINI_API_KEY:
+        prompt = f"""Generate ONE single {req.meal_type} meal for {req.goal} goal.
+Dietary style: {req.dietary_style}. Target calories: {target_cal} kcal.
+Allowed proteins: {proteins_str}. Blocklist (never use): {blocklist_str}.
+MUST NOT repeat any of these meals: {exclude_str}.
+{"PRIORITY: Use seafood or fish as the protein since user is Pescatarian." if is_pesc else ""}
+{"PRIORITY: Use meat/poultry as main protein since user is Non-Vegetarian." if not is_veg and not is_pesc else ""}
+
+Respond with ONLY valid JSON (no markdown):
+{{"type":"{req.meal_type}","name":"meal name","cal":{target_cal},"ingredients":[{{"name":"...","quantity":"...","calories":0}}],"macronutrients":{{"protein":"25g","carbohydrates":"45g","fats":"10g"}},"micronutrients_highlight":["Iron","B12"],"explainability":{{"why_selected":"...","nutritional_purpose":"...","goal_alignment":"...","allergy_confirmation":"Safe"}},"recipe":{{"steps":["step 1","step 2"],"cooking_time":"20 mins","difficulty":"Easy"}}}}"""
+        try:
+            import time
+            text = call_gemini_text(prompt).strip()
+            text = re.sub(r"^```[a-z]*\s*\n?", "", text, flags=re.MULTILINE)
+            text = re.sub(r"\n?```\s*$", "", text, flags=re.MULTILINE)
+            meal = json.loads(text.strip())
+            meal["cal"] = meal.get("cal", target_cal)
+            return meal
+        except Exception as e:
+            print(f"⚠️ Regen Gemini error: {e}")
+
+    # Fallback: pick from pool avoiding excludes
+    class FakeReq:
+        dietary_style = req.dietary_style
+        goal = req.goal
+        proteins = adj_proteins
+        cuisines = req.cuisines
+        allergies = req.allergies
+
+    fake = FakeReq()
+    day_idx = 0  # rotate differently each call
+    import random
+    day_idx = random.randint(0, 6)
+
+    import random
+    # Try multiple fallback plans with different seeds to get variety
+    candidates = []
+    for seed in range(7):
+        try:
+            class ShiftReq:
+                dietary_style = req.dietary_style
+                goal = req.goal
+                proteins = adj_proteins
+                cuisines = req.cuisines
+                allergies = req.allergies
+            shift = ShiftReq()
+            fp = make_fallback(req.target_calories, shift, adj_proteins, blocklist)
+            for d_idx, day in enumerate(fp):
+                for m in day.get("meals", []):
+                    if (m.get("type") == req.meal_type
+                            and m.get("name") not in req.exclude_names
+                            and m.get("name") not in [c.get("name") for c in candidates]):
+                        candidates.append(m)
+        except Exception:
+            pass
+
+    # Pick randomly from valid candidates
+    if candidates:
+        return random.choice(candidates)
+
+    # Absolute last resort: build a unique name variant
+    raise HTTPException(404, "Could not generate a replacement meal — please try again")
+
+# ─── UPDATE PLAN FROM FOOD LOG ───────────────────────────
+@app.post("/api/update-plan-from-food")
+def update_plan_from_food(req: UpdatePlanRequest, user=Depends(get_user), db: Session = Depends(get_db)):
+    """After logging a meal, optionally re-adjust remaining days."""
+    if not req.remaining_days or not req.current_plan:
+        return {"adjustment_note": "No remaining days to adjust.", "adjusted_plan": []}
+
+    # Calculate calorie delta
+    meals_today = req.current_plan[0].get("meals", []) if req.current_plan else []
+    planned_today_cal = sum(m.get("cal", 0) for m in meals_today)
+    delta = req.calories - (planned_today_cal / max(len(meals_today), 1)) if meals_today else 0
+
+    # Simple adjustment: if over by >200 kcal, reduce next day slightly
+    adjusted_plan = []
+    adjustment_note = ""
+
+    if abs(delta) > 200 and GEMINI_API_KEY:
+        direction = "reduce" if delta > 0 else "increase"
+        adj_amount = min(abs(delta) * 0.5, 300)
+        adj_note = f"You ate {abs(round(delta))} kcal {'more' if delta>0 else 'less'} than planned. Adjusting tomorrow by ~{round(adj_amount)} kcal."
+        try:
+            prompt = f"""You are a nutrition AI. The user ate "{req.food_name}" ({req.calories} kcal, {req.protein}g protein, {req.carbs}g carbs, {req.fats}g fats).
+Their daily target is {req.target_calories} kcal. They need to {direction} tomorrow's intake by ~{round(adj_amount)} kcal.
+Dietary style: {req.dietary_style}. Goal: {req.goal}.
+Return ONLY JSON array with adjusted meals for tomorrow in same format as input plan.
+Input plan day: {json.dumps(req.current_plan[0] if req.current_plan else {{}})}
+Return: {{"adjusted_plan": [{{...same structure...}}], "adjustment_note": "brief note"}}"""
+            text = call_gemini_text(prompt).strip()
+            text = re.sub(r"^```[a-z]*\s*\n?", "", text, flags=re.MULTILINE)
+            text = re.sub(r"\n?```\s*$", "", text, flags=re.MULTILINE)
+            result = json.loads(text.strip())
+            return result
+        except Exception as e:
+            print(f"⚠️ Plan update error: {e}")
+
+    # Simple fallback: just return current plan unchanged with a note
+    if delta > 200:
+        adjustment_note = f"You ate ~{round(delta)} kcal over today. Consider lighter meals tomorrow."
+    elif delta < -200:
+        adjustment_note = f"You ate ~{abs(round(delta))} kcal under today. You can eat a bit more tomorrow."
+    else:
+        adjustment_note = "Great! Your intake today was close to your target. Plan stays as is."
+
+    return {
+        "adjusted_plan": req.current_plan,
+        "adjustment_note": adjustment_note
+    }
 
 if __name__ == "__main__":
     import uvicorn

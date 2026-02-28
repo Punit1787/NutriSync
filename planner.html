@@ -100,10 +100,9 @@
       font-weight: 600;
       transition: all .2s;
     }
-
-    .lang-toggle:hover {
-      border-color: var(--green);
-    }
+    .lang-toggle:hover { border-color: var(--green); color: var(--green); }
+    #langMenu { display: none; }
+    #langMenu.open { display: block !important; }
 
     .lang-dot {
       width: 8px;
@@ -1837,10 +1836,21 @@
       <button class="tab-btn" onclick="switchTab('analyser',this)">🔍 <span data-i18n="tabAnalyser">Food
           Analyser</span></button>
     </div>
-    <button class="lang-toggle" onclick="toggleLang()" title="Switch language">
-      <div class="lang-dot"></div>
-      <span id="langLabel">EN → हिं</span>
-    </button>
+    <div class="lang-dropdown-wrap" style="position:relative">
+      <button class="lang-toggle" onclick="document.getElementById('langMenu').classList.toggle('open')" id="langToggleBtn">
+        <div class="lang-dot"></div>
+        <span id="langLabel">🌐 EN</span>
+        <span style="font-size:.7rem;margin-left:.2rem">▾</span>
+      </button>
+      <div id="langMenu" style="display:none;position:absolute;right:0;top:110%;background:white;border:1.5px solid #dde8df;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:999;min-width:160px;overflow:hidden;">
+        <div onclick="setLang('en')" style="padding:.6rem 1rem;cursor:pointer;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:.5rem;transition:background .15s" onmouseover="this.style.background='#f0f7f2'" onmouseout="this.style.background='white'">🇬🇧 English</div>
+        <div onclick="setLang('hi')" style="padding:.6rem 1rem;cursor:pointer;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:.5rem;transition:background .15s" onmouseover="this.style.background='#f0f7f2'" onmouseout="this.style.background='white'">🇮🇳 हिंदी</div>
+        <div onclick="setLang('mr')" style="padding:.6rem 1rem;cursor:pointer;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:.5rem;transition:background .15s" onmouseover="this.style.background='#f0f7f2'" onmouseout="this.style.background='white'">🇮🇳 मराठी</div>
+        <div onclick="setLang('es')" style="padding:.6rem 1rem;cursor:pointer;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:.5rem;transition:background .15s" onmouseover="this.style.background='#f0f7f2'" onmouseout="this.style.background='white'">🇪🇸 Español</div>
+        <div onclick="setLang('ta')" style="padding:.6rem 1rem;cursor:pointer;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:.5rem;transition:background .15s" onmouseover="this.style.background='#f0f7f2'" onmouseout="this.style.background='white'">🇮🇳 தமிழ்</div>
+        <div onclick="setLang('gu')" style="padding:.6rem 1rem;cursor:pointer;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:.5rem;transition:background .15s" onmouseover="this.style.background='#f0f7f2'" onmouseout="this.style.background='white'">🇮🇳 ગુજરાતી</div>
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════ PLANNER TAB ═══════════ -->
@@ -1970,7 +1980,7 @@
            <div class="chips">
   <span class="chip" data-g="diet" data-value="Vegetarian" onclick="selChip(this)">🥬 Vegetarian</span>
   <span class="chip" data-g="diet" data-value="Vegan" onclick="selChip(this)">🌱 Vegan</span>
-  <span class="chip" data-g="diet" data-value="Non-Vegetarian" onclick="selChip(this)">🍖 Non-Vegetarian</span>
+  <span class="chip sel" data-g="diet" data-value="Non-Vegetarian" onclick="selChip(this)">🍖 Non-Vegetarian</span>
   <span class="chip" data-g="diet" data-value="Pescatarian" onclick="selChip(this)">🐟 Pescatarian</span>
 </div>
           </div>
@@ -2140,7 +2150,7 @@
            <select id="a-diet">
             <option value="Vegetarian">Vegetarian</option>
            <option value="Vegan">Vegan</option>
-           <option value="Non-Vegetarian">Non-Vegetarian</option>
+           <option value="Non-Vegetarian" selected>Non-Vegetarian</option>
             <option value="Pescatarian">Pescatarian</option>
             </select>
           </div>
@@ -2349,20 +2359,132 @@
         logMealTitle: "📸 आपने क्या खाया, लॉग करें",
         typeIt: "टाइप करें", uploadPhoto: "फ़ोटो अपलोड करें",
         whatAte: "आपने क्या खाया?", logMealBtn: "भोजन लॉग करें और योजना अपडेट करें",
+      },
+      mr: {
+        tabPlanner: "जेवण योजना", tabAnalyser: "अन्न विश्लेषक",
+        generating: "🌿 AI तुमची योजना बनवत आहे…",
+        genTime: "संपूर्ण ७-दिवसांच्या योजनेसाठी २०–४० सेकंद लागतात",
+        step1of4: "चरण १/४", aboutYou: "तुमच्याबद्दल सांगा",
+        step1desc: "तुमच्या BMR ची अचूक गणना करण्यासाठी.",
+        dob: "जन्मतारीख", gender: "लिंग", height: "उंची", weight: "वजन",
+        next: "पुढे →", back: "← मागे",
+        step2of4: "चरण २/४", goalsActivity: "ध्येय आणि क्रियाकलाप",
+        fitnessGoal: "फिटनेस ध्येय", muscleGain: "स्नायू वाढवा",
+        weightLoss: "वजन कमी करा", maintain: "वजन टिकवा",
+        dietStyle: "आहार शैली", veg: "शाकाहारी", vegan: "शुद्ध शाकाहारी",
+        nonveg: "मांसाहारी", pesc: "माशाहारी",
+        proteinsLabel: "तुम्ही कोणते प्रथिने खाता",
+        allergyLabel: "⚠️ एलर्जी / असहिष्णुता",
+        generatePlan: "माझी योजना बनवा",
+        plan7day: "तुमची ७-दिवसांची योजना",
+        save: "योजना जतन करा", regen: "पुन्हा बनवा",
+        analyserTitle: "🔍 अन्न प्रतिमा विश्लेषक",
+        analyseBtn: "हे अन्न विश्लेषण करा",
+        logMealTitle: "📸 तुम्ही काय खाल्ले ते नोंदवा",
+        logMealBtn: "जेवण नोंदवा आणि योजना अपडेट करा",
+      },
+      es: {
+        tabPlanner: "Plan de Comidas", tabAnalyser: "Analizador de Alimentos",
+        generating: "🌿 La IA está creando tu plan…",
+        genTime: "Puede tardar 20–40 segundos para el plan completo",
+        step1of4: "Paso 1/4", aboutYou: "Cuéntanos sobre ti",
+        step1desc: "Para calcular tu tasa metabólica basal exacta.",
+        dob: "Fecha de nacimiento", gender: "Género", height: "Altura", weight: "Peso",
+        next: "Siguiente →", back: "← Atrás",
+        step2of4: "Paso 2/4", goalsActivity: "Objetivos y Actividad",
+        fitnessGoal: "Objetivo Fitness", muscleGain: "Ganar Músculo",
+        weightLoss: "Perder Peso", maintain: "Mantener Peso",
+        dietStyle: "Estilo Dietético", veg: "Vegetariano", vegan: "Vegano",
+        nonveg: "No Vegetariano", pesc: "Pescetariano",
+        proteinsLabel: "Proteínas que consumes",
+        allergyLabel: "⚠️ Alergias / Intolerancias",
+        generatePlan: "Generar Mi Plan",
+        plan7day: "Tu Plan Clínico de 7 Días",
+        save: "Guardar Plan", regen: "Regenerar",
+        analyserTitle: "🔍 Analizador de Imagen de Alimentos",
+        analyseBtn: "Analizar Este Alimento",
+        logMealTitle: "📸 Registra lo que comiste",
+        logMealBtn: "Registrar Comida y Actualizar Plan",
+      },
+      ta: {
+        tabPlanner: "உணவு திட்டம்", tabAnalyser: "உணவு பகுப்பாய்வி",
+        generating: "🌿 AI உங்கள் திட்டம் உருவாக்குகிறது…",
+        genTime: "முழு ७-நாள் திட்டத்திற்கு २०–४० வினாடிகள் ஆகலாம்",
+        step1of4: "படி 1/4", aboutYou: "உங்களைப் பற்றி சொல்லுங்கள்",
+        dob: "பிறந்த தேதி", gender: "பாலினம்", height: "உயரம்", weight: "எடை",
+        next: "அடுத்து →", back: "← பின்",
+        fitnessGoal: "உடற்தகுதி இலக்கு", muscleGain: "தசை வளர்ப்பு",
+        weightLoss: "எடை குறைப்பு", maintain: "எடை பராமரிப்பு",
+        dietStyle: "உணவு முறை", veg: "சைவம்", vegan: "தூய சைவம்",
+        nonveg: "அசைவம்", pesc: "மீன் உணவு",
+        generatePlan: "என் திட்டம் உருவாக்கு",
+        plan7day: "உங்கள் 7-நாள் திட்டம்",
+        save: "திட்டம் சேமி", regen: "மீண்டும் உருவாக்கு",
+        analyseBtn: "இந்த உணவை பகுப்பாய்வு செய்",
+        logMealTitle: "📸 நீங்கள் சாப்பிட்டதை பதிவு செய்யுங்கள்",
+        logMealBtn: "உணவு பதிவு செய்து திட்டம் புதுப்பி",
+      },
+      gu: {
+        tabPlanner: "ભોજન યોજના", tabAnalyser: "ખોરાક વિશ્લેષક",
+        generating: "🌿 AI તમારી યોજના બનાવી રહ્યી છે…",
+        genTime: "સંપૂર્ણ ७-દિવસની યોજના માટે ૨૦–૪૦ સેકન્ડ",
+        step1of4: "પગલું 1/4", aboutYou: "તમારા વિશે જણાવો",
+        dob: "જન્મ તારીખ", gender: "લિંગ", height: "ઊંચાઈ", weight: "વજન",
+        next: "આગળ →", back: "← પાછળ",
+        fitnessGoal: "ફિટનેસ લક્ષ્ય", muscleGain: "સ્નાયુ વધારો",
+        weightLoss: "વજન ઘટાડો", maintain: "વજન જાળવો",
+        dietStyle: "આહાર શૈલી", veg: "શાકાહારી", vegan: "શુદ્ધ શાકાહારી",
+        nonveg: "માંસાહારી", pesc: "માછલી ખાનારા",
+        generatePlan: "મારી યોજના બનાવો",
+        plan7day: "તમારી 7-દિવસની ક્લિનિકલ યોજના",
+        save: "યોજના સાચવો", regen: "ફરી બનાવો",
+        analyseBtn: "આ ખોરાકનું વિશ્લેષણ કરો",
+        logMealTitle: "📸 તમે શું ખાધું તે નોંધો",
+        logMealBtn: "ભોજન નોંધો અને યોજના અપડેટ કરો",
       }
     };
 
     let currentLang = 'en';
-    function toggleLang() {
-      currentLang = currentLang === 'en' ? 'hi' : 'en';
-      document.getElementById('langLabel').textContent = currentLang === 'en' ? 'EN → हिं' : 'हिं → EN';
+    const _langs = ['en','hi','mr','es','ta','gu'];
+    const _langNames = {'en':'🌐 EN','hi':'🌐 हिं','mr':'🌐 मर','es':'🌐 ES','ta':'🌐 தமி','gu':'🌐 ગુ'};
+    function setLang(lang) {
+      currentLang = lang;
+      document.getElementById('langLabel').textContent = _langNames[lang] || '🌐 EN';
+      document.getElementById('langMenu').classList.remove('open');
       applyTranslations();
     }
+    function toggleLang() { setLang(_langs[(_langs.indexOf(currentLang)+1)%_langs.length]); }
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const wrap = document.querySelector('.lang-dropdown-wrap');
+      if (wrap && !wrap.contains(e.target)) document.getElementById('langMenu').classList.remove('open');
+    });
     function applyTranslations() {
       const t = T[currentLang];
+      if (!t) return;
+      // Text content
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
-        if (t[key]) el.textContent = t[key];
+        if (t[key] !== undefined) el.textContent = t[key];
+      });
+      // Placeholder text
+      document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+        const key = el.getAttribute('data-i18n-ph');
+        if (t[key]) el.placeholder = t[key];
+      });
+      // Button values
+      document.querySelectorAll('[data-i18n-val]').forEach(el => {
+        const key = el.getAttribute('data-i18n-val');
+        if (t[key]) {
+          if (el.tagName === 'INPUT') el.value = t[key];
+          else el.setAttribute('data-value', t[key]);
+        }
+      });
+      // Update chip display text for translated chips
+      document.querySelectorAll('.chip[data-g="diet"]').forEach(el => {
+        const val = el.dataset.value;
+        const map = {Vegetarian:'veg',Vegan:'vegan','Non-Vegetarian':'nonveg',Pescatarian:'pesc'};
+        if (map[val] && t[map[val]]) el.textContent = el.textContent.split(' ').slice(0,1).join('') + ' ' + t[map[val]];
       });
     }
 
@@ -2385,7 +2507,25 @@
     function setHU(u) { hU = u;['cm', 'ft'].forEach(x => document.getElementById('ht-' + x).classList.toggle('active', x === u)); document.getElementById('h-cm').style.display = u === 'cm' ? 'block' : 'none'; document.getElementById('h-ft').style.display = u === 'ft' ? 'grid' : 'none'; }
     function setWU(u) { wU = u;['kg', 'lb'].forEach(x => document.getElementById('wt-' + x).classList.toggle('active', x === u)); }
     function selChip(el) { document.querySelectorAll(`.chip[data-g="${el.dataset.g}"]`).forEach(c => c.classList.remove('sel')); el.classList.add('sel'); }
-    function togChip(el) { el.classList.toggle('sel'); }
+    function togChip(el) {
+      const wasNone = el.textContent.replace(/[^\w\s]/g,'').trim().toLowerCase().includes('none');
+      const parent = el.closest('.chips');
+      if (wasNone) {
+        // Clicking None: deselect all others in group
+        el.classList.toggle('sel');
+        if (el.classList.contains('sel') && parent) {
+          parent.querySelectorAll('.chip.multi.sel').forEach(c => { if (c !== el) c.classList.remove('sel'); });
+        }
+      } else {
+        el.classList.toggle('sel');
+        // Deselect "None" chip in same group if any other is selected
+        if (el.classList.contains('sel') && parent) {
+          parent.querySelectorAll('.chip.multi').forEach(c => {
+            if (c.textContent.replace(/[^\w\s]/g,'').trim().toLowerCase().includes('none')) c.classList.remove('sel');
+          });
+        }
+      }
+    }
     function togCC(el) { el.classList.toggle('sel'); }
     function gChip(group){
   const el = document.querySelector(`.chip.sel[data-g="${group}"]`);
@@ -2931,11 +3071,17 @@
         const data = await r.json();
         renderAnalysis(data);
       } catch (e) {
-        document.getElementById('aresult').innerHTML = `<div class="err-box">❌ Analysis failed: ${e.message}<br/><button onclick="analyseImage()" style="margin-top:.7rem;padding:.45rem 1rem;border:1.5px solid #d97706;border-radius:8px;background:#fff7ed;color:#92400e;font-size:.78rem;cursor:pointer;font-weight:600;">🔄 Retry Analysis</button></div>`;
+        let errMsg = e.message || 'Unknown error';
+        // Common fix: if 422 (JSON parse from Gemini), suggest retry
+        if (errMsg.includes('422') || errMsg.includes('JSON')) errMsg = 'AI returned unexpected format. Please retry.';
+        if (errMsg.includes('429')) errMsg = 'Rate limit hit — please wait 15 seconds and retry.';
+        if (errMsg.includes('503')) errMsg = 'Gemini API not configured on server.';
+        document.getElementById('aresult').innerHTML = `<div class="err-box">❌ Analysis failed: ${errMsg}<br/><button onclick="analyseImage()" style="margin-top:.7rem;padding:.45rem 1rem;border:1.5px solid #d97706;border-radius:8px;background:#fff7ed;color:#92400e;font-size:.78rem;cursor:pointer;font-weight:600;">🔄 Retry</button></div>`;
         document.getElementById('aresult').classList.add('show');
       } finally {
         document.getElementById('aload').classList.remove('show');
         btn.disabled = false;
+        btn.innerHTML = '<span>🔬</span> <span data-i18n="analyseBtn">Analyse This Food</span>';
       }
     }
 
