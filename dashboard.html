@@ -159,7 +159,114 @@
 
   @media(max-width:1100px){.stats{grid-template-columns:1fr 1fr;}.month-stats{grid-template-columns:1fr 1fr;}}
   @media(max-width:900px){.mgrid{grid-template-columns:1fr;}}
-  @media(max-width:768px){.app{grid-template-columns:1fr;}.sidebar{display:none;}.content{padding:1.3rem;}}
+  @media(max-width:768px){
+    .app{grid-template-columns:1fr;}
+    .sidebar{display:none;}
+    .content{padding:1rem .9rem;}
+    .stats{grid-template-columns:1fr 1fr;gap:.7rem;}
+    .sc{padding:1rem;}
+    .sv{font-size:1.35rem;}
+    .page-header{flex-direction:column;align-items:flex-start;gap:.8rem;}
+    .page-header>div:last-child{width:100%;display:flex;justify-content:space-between;align-items:center;}
+    .dash-tabs{overflow-x:auto;scrollbar-width:none;gap:.2rem;-webkit-overflow-scrolling:touch;}
+    .dash-tabs::-webkit-scrollbar{display:none;}
+    .dash-tab{white-space:nowrap;padding:.55rem .8rem;font-size:.78rem;}
+    .card{padding:1.1rem;}
+    .month-stats{grid-template-columns:1fr 1fr;}
+    .macro-chart{grid-template-columns:1fr 1fr 1fr;}
+    /* NatureSync mobile */
+    .ns-grid{grid-template-columns:1fr;}
+    .ns-score-wrap{flex-direction:column;text-align:center;gap:.8rem;}
+    .ns-score-text{text-align:center;}
+    .ns-hero{padding:1.3rem;}
+    .ns-tips{padding:1rem;}
+  }
+  @media(max-width:480px){
+    .stats{grid-template-columns:1fr 1fr;}
+    .sc .si{font-size:1.1rem;}
+    .sv{font-size:1.15rem;}
+    .sl{font-size:.7rem;}
+    .page-header h1{font-size:1.3rem;}
+    /* NatureSync tips side-by-side on small */
+    #panel-nature>div:last-child{grid-template-columns:1fr;}
+  }
+
+  /* ── NATURESYNC ─────────────────────────────────────── */
+  .ns-hero{background:linear-gradient(135deg,#0a3d1f,#1a5c32,#2d8a50);border-radius:20px;padding:1.8rem;color:white;margin-bottom:1.8rem;position:relative;overflow:hidden;}
+  .ns-hero::before{content:'🌿';position:absolute;right:-10px;top:-15px;font-size:7rem;opacity:.12;}
+  .ns-hero h2{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;margin-bottom:.3rem;}
+  .ns-hero p{font-size:.83rem;color:#a8d5b5;margin-bottom:1.2rem;}
+  .ns-score-wrap{display:flex;align-items:center;gap:1.5rem;}
+  .ns-score-ring{position:relative;flex-shrink:0;}
+  .ns-score-label{text-align:center;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+  .ns-score-num{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:white;}
+  .ns-score-sub{font-size:.58rem;color:#a8d5b5;display:block;}
+  .ns-score-text h3{font-size:1rem;font-weight:700;margin-bottom:.25rem;}
+  .ns-score-text p{font-size:.76rem;color:#a8d5b5;line-height:1.5;}
+  .ns-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem;margin-bottom:1.5rem;}
+  @media(max-width:900px){.ns-grid{grid-template-columns:1fr;}}
+  .ns-card{background:white;border-radius:16px;padding:1.4rem;border:1px solid #e8f4ec;transition:transform .2s,box-shadow .2s;}
+  .ns-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(45,106,79,.1);}
+  .ns-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+  .ns-card-title{display:flex;align-items:center;gap:.55rem;font-weight:700;font-size:.9rem;}
+  .ns-icon-wrap{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+  .ns-icon-blue{background:#eff6ff;}
+  .ns-icon-yellow{background:#fefce8;}
+  .ns-icon-green{background:#f0fdf4;}
+  .ns-icon-purple{background:#faf5ff;}
+  .ns-badge{padding:.22rem .65rem;border-radius:50px;font-size:.68rem;font-weight:700;}
+  .ns-badge-blue{background:#dbeafe;color:#1e40af;}
+  .ns-badge-yellow{background:#fef9c3;color:#854d0e;}
+  .ns-badge-green{background:#dcfce7;color:#166534;}
+  .ns-badge-purple{background:#f3e8ff;color:#6b21a8;}
+  .ns-progress-bar{background:#f0f7f2;border-radius:50px;height:10px;overflow:hidden;margin-bottom:.5rem;}
+  .ns-progress-fill{height:100%;border-radius:50px;transition:width .8s ease;}
+  .ns-fill-blue{background:linear-gradient(90deg,#3b82f6,#60a5fa);}
+  .ns-fill-yellow{background:linear-gradient(90deg,#f59e0b,#fbbf24);}
+  .ns-fill-green{background:linear-gradient(90deg,#22c55e,#4ade80);}
+  .ns-fill-purple{background:linear-gradient(90deg,#a855f7,#c084fc);}
+  .ns-progress-nums{display:flex;justify-content:space-between;font-size:.72rem;color:var(--gray);}
+  .ns-progress-nums span:first-child{font-weight:700;color:var(--dark);}
+  .ns-stepper{display:flex;align-items:center;gap:.65rem;margin-top:.8rem;}
+  .ns-step-btn{width:32px;height:32px;border-radius:50%;border:1.5px solid #dde8df;background:white;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-weight:600;}
+  .ns-step-btn:hover{background:var(--green);color:white;border-color:var(--green);}
+  .ns-step-val{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:var(--dark);min-width:36px;text-align:center;}
+  .ns-step-label{font-size:.75rem;color:var(--gray);}
+  .ns-slider-wrap{margin-top:.8rem;}
+  .ns-slider{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:50px;outline:none;cursor:pointer;margin-bottom:.4rem;}
+  .ns-slider.sun{background:linear-gradient(90deg,#fef9c3 0%,#f59e0b 100%);}
+  .ns-slider.sleep{background:linear-gradient(90deg,#f3e8ff 0%,#a855f7 100%);}
+  .ns-slider.air{background:linear-gradient(90deg,#f0fdf4 0%,#22c55e 100%);}
+  .ns-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;cursor:pointer;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+  .ns-slider.sun::-webkit-slider-thumb{background:#f59e0b;}
+  .ns-slider.sleep::-webkit-slider-thumb{background:#a855f7;}
+  .ns-slider.air::-webkit-slider-thumb{background:#22c55e;}
+  .ns-insight{background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:12px;padding:1rem 1.2rem;margin-top:.8rem;}
+  .ns-insight p{font-size:.78rem;color:#166534;line-height:1.6;}
+  .ns-insight p strong{color:#14532d;}
+  .ns-tips{background:white;border-radius:16px;padding:1.4rem;border:1px solid #e8f4ec;margin-bottom:1.2rem;}
+  .ns-tips h4{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+  .ns-tip-item{display:flex;align-items:flex-start;gap:.75rem;padding:.7rem 0;border-bottom:1px dashed #e8f4ec;}
+  .ns-tip-item:last-child{border:none;padding-bottom:0;}
+  .ns-tip-icon{font-size:1.2rem;flex-shrink:0;margin-top:.05rem;}
+  .ns-tip-text{font-size:.8rem;line-height:1.55;color:var(--dark);}
+  .ns-tip-text strong{color:var(--green);}
+  .ns-streak{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.7rem;}
+  .ns-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;}
+  .ns-dot.done{background:var(--green);color:white;}
+  .ns-dot.miss{background:#f0f7f2;color:#94a3b8;border:1.5px dashed #dde8df;}
+  .ns-dot.today{background:var(--gl);color:white;box-shadow:0 0 0 3px rgba(82,183,136,.25);}
+  .ns-log-btn{width:100%;padding:.65rem;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.83rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:.9rem;}
+  .ns-log-btn.blue{background:#dbeafe;color:#1e40af;}
+  .ns-log-btn.blue:hover{background:#3b82f6;color:white;}
+  .ns-log-btn.yellow{background:#fef9c3;color:#854d0e;}
+  .ns-log-btn.yellow:hover{background:#f59e0b;color:white;}
+  .ns-log-btn.green{background:#dcfce7;color:#166534;}
+  .ns-log-btn.green:hover{background:#22c55e;color:white;}
+  .ns-log-btn.purple{background:#f3e8ff;color:#6b21a8;}
+  .ns-log-btn.purple:hover{background:#a855f7;color:white;}
+  .ns-toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--dark);color:white;padding:.8rem 1.4rem;border-radius:12px;font-size:.85rem;font-weight:600;z-index:9999;transform:translateY(100px);opacity:0;transition:all .4s;pointer-events:none;}
+  .ns-toast.show{transform:translateY(0);opacity:1;}
 </style>
 </head>
 <body>
@@ -171,6 +278,7 @@
       <a class="nav-item" href="/planner"><span class="nav-icon">🍽️</span> <span data-i18n="tabPlanner">Meal Planner</span></a>
       <a class="nav-item" href="/planner" onclick="setTimeout(()=>{let b=document.querySelectorAll('.tab-btn');if(b[1])b[1].click();},500)"><span class="nav-icon">🔍</span> Food Analyser</a>
       <a class="nav-item" href="#" onclick="switchDashTab('tracker',null)"><span class="nav-icon">📅</span> <span data-i18n="monthTracker">Monthly Tracker</span></a>
+      <a class="nav-item" href="#" onclick="switchDashTab('nature',null)"><span class="nav-icon">🌿</span> NatureSync</a>
       <a class="nav-item" href="/"><span class="nav-icon">🏠</span> Home</a>
     </div>
     <div class="sidebar-bottom">
@@ -213,6 +321,7 @@
       <button class="dash-tab active" onclick="switchDashTab('overview',this)" data-i18n="overview">Overview</button>
       <button class="dash-tab" onclick="switchDashTab('tracker',this)" data-i18n="monthTracker">Monthly Tracker</button>
       <button class="dash-tab" onclick="switchDashTab('plans',this)" data-i18n="allPlans">All Plans</button>
+      <button class="dash-tab" onclick="switchDashTab('nature',this)">🌿 NatureSync</button>
     </div>
 
     <!-- OVERVIEW TAB -->
@@ -342,6 +451,171 @@
       </div>
     </div>
 
+    <!-- NATURESYNC TAB -->
+    <div class="dash-panel" id="panel-nature">
+
+      <!-- Hero score -->
+      <div class="ns-hero">
+        <h2>🌿 NatureSync</h2>
+        <p>Track your hydration, sunlight, sleep &amp; fresh air for a healthier, more natural lifestyle.</p>
+        <div class="ns-score-wrap">
+          <div class="ns-score-ring">
+            <svg width="100" height="100" style="transform:rotate(-90deg)">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="8"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#52b788" stroke-width="8"
+                stroke-dasharray="263.9" id="nsScoreRing" stroke-dashoffset="263.9" stroke-linecap="round"/>
+            </svg>
+            <div class="ns-score-label">
+              <div class="ns-score-num" id="nsScoreNum">0</div>
+              <span class="ns-score-sub">/ 100</span>
+            </div>
+          </div>
+          <div class="ns-score-text">
+            <h3 id="nsScoreTitle">Start Logging Today</h3>
+            <p id="nsScoreMsg">Log your water, sun exposure, sleep and outdoor time to see your NatureSync score.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 tracker cards -->
+      <div class="ns-grid">
+
+        <!-- Hydration -->
+        <div class="ns-card">
+          <div class="ns-card-header">
+            <div class="ns-card-title">
+              <div class="ns-icon-wrap ns-icon-blue">💧</div>
+              Hydration
+            </div>
+            <span class="ns-badge ns-badge-blue" id="hydBadge">0 / 8 glasses</span>
+          </div>
+          <div class="ns-progress-bar"><div class="ns-progress-fill ns-fill-blue" id="hydBar" style="width:0%"></div></div>
+          <div class="ns-progress-nums"><span id="hydValText">0 ml</span><span>Target: 2000 ml</span></div>
+          <div class="ns-stepper">
+            <button class="ns-step-btn" onclick="adjustHyd(-1)">−</button>
+            <div>
+              <div class="ns-step-val" id="hydCount">0</div>
+              <div class="ns-step-label">glasses (250ml)</div>
+            </div>
+            <button class="ns-step-btn" onclick="adjustHyd(1)">+</button>
+          </div>
+          <div class="ns-insight" id="hydInsight">
+            <p>💡 <strong>Tip:</strong> Start your day with a glass of water before checking your phone. Aim for <strong>8 glasses</strong> spread across the day.</p>
+          </div>
+          <button class="ns-log-btn blue" onclick="saveNatureLog('hydration')">💾 Save Hydration</button>
+        </div>
+
+        <!-- Sunlight -->
+        <div class="ns-card">
+          <div class="ns-card-header">
+            <div class="ns-card-title">
+              <div class="ns-icon-wrap ns-icon-yellow">☀️</div>
+              Sunlight Exposure
+            </div>
+            <span class="ns-badge ns-badge-yellow" id="sunBadge">0 min today</span>
+          </div>
+          <div class="ns-progress-bar"><div class="ns-progress-fill ns-fill-yellow" id="sunBar" style="width:0%"></div></div>
+          <div class="ns-progress-nums"><span id="sunValText">0 min</span><span>Target: 30 min</span></div>
+          <div class="ns-slider-wrap">
+            <input type="range" min="0" max="120" value="0" class="ns-slider sun" id="sunSlider" oninput="updateSun(this.value)"/>
+            <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--gray)"><span>0 min</span><span>60 min</span><span>120 min</span></div>
+          </div>
+          <div class="ns-insight" id="sunInsight">
+            <p>💡 <strong>Tip:</strong> Morning sunlight between 7–9 AM boosts vitamin D and regulates your circadian rhythm. Even <strong>15–20 minutes</strong> makes a big difference!</p>
+          </div>
+          <button class="ns-log-btn yellow" onclick="saveNatureLog('sunlight')">💾 Save Sunlight</button>
+        </div>
+
+        <!-- Sleep -->
+        <div class="ns-card">
+          <div class="ns-card-header">
+            <div class="ns-card-title">
+              <div class="ns-icon-wrap ns-icon-purple">🌙</div>
+              Sleep Quality
+            </div>
+            <span class="ns-badge ns-badge-purple" id="sleepBadge">0 hrs last night</span>
+          </div>
+          <div class="ns-progress-bar"><div class="ns-progress-fill ns-fill-purple" id="sleepBar" style="width:0%"></div></div>
+          <div class="ns-progress-nums"><span id="sleepValText">0 hrs</span><span>Target: 8 hrs</span></div>
+          <div class="ns-slider-wrap">
+            <input type="range" min="0" max="12" step="0.5" value="0" class="ns-slider sleep" id="sleepSlider" oninput="updateSleep(this.value)"/>
+            <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--gray)"><span>0 hrs</span><span>6 hrs</span><span>12 hrs</span></div>
+          </div>
+          <div class="ns-insight" id="sleepInsight">
+            <p>💡 <strong>Tip:</strong> Keep a consistent sleep schedule — even on weekends. Avoid screens 30 minutes before bed and sleep in a cool, dark room.</p>
+          </div>
+          <button class="ns-log-btn purple" onclick="saveNatureLog('sleep')">💾 Save Sleep</button>
+        </div>
+
+        <!-- Fresh Air / Outdoor -->
+        <div class="ns-card">
+          <div class="ns-card-header">
+            <div class="ns-card-title">
+              <div class="ns-icon-wrap ns-icon-green">🌬️</div>
+              Fresh Air & Outdoors
+            </div>
+            <span class="ns-badge ns-badge-green" id="airBadge">0 min outside</span>
+          </div>
+          <div class="ns-progress-bar"><div class="ns-progress-fill ns-fill-green" id="airBar" style="width:0%"></div></div>
+          <div class="ns-progress-nums"><span id="airValText">0 min</span><span>Target: 45 min</span></div>
+          <div class="ns-slider-wrap">
+            <input type="range" min="0" max="180" value="0" class="ns-slider air" id="airSlider" oninput="updateAir(this.value)"/>
+            <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--gray)"><span>0 min</span><span>90 min</span><span>180 min</span></div>
+          </div>
+          <div class="ns-insight" id="airInsight">
+            <p>💡 <strong>Tip:</strong> A short walk outside reduces cortisol (stress hormone) levels. Even <strong>10 minutes</strong> of outdoor time helps mental clarity and energy.</p>
+          </div>
+          <button class="ns-log-btn green" onclick="saveNatureLog('air')">💾 Save Outdoor Time</button>
+        </div>
+
+      </div><!-- /.ns-grid -->
+
+      <!-- Remedies section -->
+      <div class="ns-tips" id="nsRemedies" style="margin-top:0;background:linear-gradient(135deg,#f8fdf9,#ecfdf5);border:1px solid #bbf7d0;">
+        <h4>🩺 Personalized Remedies & Wellness Tips</h4>
+        <div id="nsRemedyList">
+          <div style="color:var(--gray);font-size:.82rem;text-align:center;padding:.5rem">Log your nature data above to get personalized remedies.</div>
+        </div>
+      </div>
+
+      <!-- 7-day streak + tips row -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem">
+
+        <!-- 7-day streak -->
+        <div class="ns-tips">
+          <h4>🔥 7-Day NatureSync Streak</h4>
+          <p style="font-size:.77rem;color:var(--gray);margin-bottom:.7rem">Days where you hit all 4 nature targets:</p>
+          <div class="ns-streak" id="nsStreak"></div>
+          <div style="margin-top:.9rem;font-size:.78rem;color:var(--gray)">
+            Keep logging daily to build your streak! Each dot = one day.
+          </div>
+        </div>
+
+        <!-- Nature tips -->
+        <div class="ns-tips">
+          <h4>🌱 Today's Nature Tips</h4>
+          <div class="ns-tip-item">
+            <span class="ns-tip-icon">💧</span>
+            <div class="ns-tip-text">Drink <strong>a glass of water</strong> first thing in the morning — it jumpstarts your metabolism.</div>
+          </div>
+          <div class="ns-tip-item">
+            <span class="ns-tip-icon">☀️</span>
+            <div class="ns-tip-text">Take your morning tea or coffee <strong>outside</strong> to combine sunlight and hydration habits.</div>
+          </div>
+          <div class="ns-tip-item">
+            <span class="ns-tip-icon">🌙</span>
+            <div class="ns-tip-text">Set a <strong>sleep alarm</strong> — not just a wake alarm — to remind yourself when to wind down.</div>
+          </div>
+          <div class="ns-tip-item">
+            <span class="ns-tip-icon">🌬️</span>
+            <div class="ns-tip-text"><strong>Open your windows</strong> for 10 minutes each morning to refresh indoor air quality.</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /#panel-nature -->
+
   </main>
 </div>
 
@@ -397,6 +671,7 @@ function switchDashTab(name, btn){
   if(btn) btn.classList.add('active');
   if(name==='tracker') loadMonthlyData();
   if(name==='plans') renderAllPlans();
+  if(name==='nature') initNatureSync();
 }
 
 // ─── INIT ─────────────────────────────────────────────────
@@ -676,6 +951,215 @@ function logout(){
   localStorage.removeItem('token');
   localStorage.removeItem('userName');
   window.location.href='/';
+}
+
+// ─── NATURESYNC ────────────────────────────────────────────
+const NS_KEY = 'natureSyncData';
+
+function getNSData(){
+  try{ return JSON.parse(localStorage.getItem(NS_KEY)) || {}; }catch{ return {}; }
+}
+function setNSData(d){ localStorage.setItem(NS_KEY, JSON.stringify(d)); }
+
+function getTodayKey(){ return new Date().toISOString().split('T')[0]; }
+
+// State
+let nsState = { hydration: 0, sunlight: 0, sleep: 0, air: 0 };
+
+function initNatureSync(){
+  const data = getNSData();
+  const today = getTodayKey();
+  if(data[today]){
+    nsState = { ...nsState, ...data[today] };
+    document.getElementById('hydCount').textContent = nsState.hydration;
+    document.getElementById('sunSlider').value = nsState.sunlight;
+    document.getElementById('sleepSlider').value = nsState.sleep;
+    document.getElementById('airSlider').value = nsState.air;
+  }
+  renderAllNS();
+  renderNSStreak(data);
+}
+
+function adjustHyd(delta){
+  nsState.hydration = Math.max(0, Math.min(20, nsState.hydration + delta));
+  document.getElementById('hydCount').textContent = nsState.hydration;
+  renderHydration();
+  recalcNSScore();
+}
+function updateSun(v){ nsState.sunlight = parseInt(v); renderSunlight(); recalcNSScore(); }
+function updateSleep(v){ nsState.sleep = parseFloat(v); renderSleep(); recalcNSScore(); }
+function updateAir(v){ nsState.air = parseInt(v); renderAir(); recalcNSScore(); }
+
+function renderHydration(){
+  const ml = nsState.hydration * 250;
+  const pct = Math.min(ml / 2000 * 100, 100);
+  document.getElementById('hydBar').style.width = pct + '%';
+  document.getElementById('hydValText').textContent = ml + ' ml';
+  document.getElementById('hydBadge').textContent = nsState.hydration + ' / 8 glasses';
+  const h = nsState.hydration;
+  let msg = '💡 <strong>Tip:</strong> Start your day with a glass of water before checking your phone. Aim for <strong>8 glasses</strong> spread across the day.';
+  if(h >= 8) msg = '🎉 <strong>Amazing!</strong> You\'ve hit your daily hydration goal! Staying well-hydrated boosts energy, focus and skin health.';
+  else if(h >= 5) msg = '👍 <strong>Good progress!</strong> You\'re more than halfway there. Keep sipping every 1–2 hours to stay hydrated.';
+  else if(h >= 2) msg = '⚠️ <strong>Keep going!</strong> You need about <strong>'+(8-h)+' more glasses</strong> to reach your goal. Set a phone reminder!';
+  document.getElementById('hydInsight').innerHTML = '<p>' + msg + '</p>';
+}
+
+function renderSunlight(){
+  const v = nsState.sunlight;
+  const pct = Math.min(v / 30 * 100, 100);
+  document.getElementById('sunBar').style.width = pct + '%';
+  document.getElementById('sunValText').textContent = v + ' min';
+  document.getElementById('sunBadge').textContent = v + ' min today';
+  let msg = '💡 <strong>Tip:</strong> Morning sunlight between 7–9 AM boosts vitamin D and regulates your circadian rhythm.';
+  if(v >= 30) msg = '🌟 <strong>Excellent!</strong> You\'ve met your sunlight goal. Vitamin D supports immunity, mood and bone health.';
+  else if(v >= 15) msg = '✅ <strong>Halfway there!</strong> Try to get another <strong>'+(30-v)+' minutes</strong> of sun. A short lunch walk works great!';
+  else if(v > 0) msg = '☁️ <strong>Getting started!</strong> You have <strong>'+(30-v)+' min</strong> remaining. Even cloudy-day outdoor time counts!';
+  document.getElementById('sunInsight').innerHTML = '<p>' + msg + '</p>';
+}
+
+function renderSleep(){
+  const v = nsState.sleep;
+  const pct = Math.min(v / 8 * 100, 100);
+  document.getElementById('sleepBar').style.width = pct + '%';
+  document.getElementById('sleepValText').textContent = v + ' hrs';
+  document.getElementById('sleepBadge').textContent = v + ' hrs last night';
+  let msg = '💡 <strong>Tip:</strong> Keep a consistent sleep schedule. Avoid screens 30 min before bed.';
+  if(v >= 8) msg = '🌙 <strong>Well rested!</strong> 8+ hours supports memory consolidation, hormone balance and immune function.';
+  else if(v >= 6) msg = '🙂 <strong>Almost there!</strong> You\'re at ' + v + ' hrs. Try going to bed <strong>'+(8-v)+' hour(s) earlier</strong> tonight.';
+  else if(v > 0) msg = '😴 <strong>Need more rest!</strong> Under 6 hours raises cortisol and impairs decision-making. Prioritise sleep tonight!';
+  document.getElementById('sleepInsight').innerHTML = '<p>' + msg + '</p>';
+}
+
+function renderAir(){
+  const v = nsState.air;
+  const pct = Math.min(v / 45 * 100, 100);
+  document.getElementById('airBar').style.width = pct + '%';
+  document.getElementById('airValText').textContent = v + ' min';
+  document.getElementById('airBadge').textContent = v + ' min outside';
+  let msg = '💡 <strong>Tip:</strong> A short walk outside reduces cortisol levels. Even <strong>10 minutes</strong> helps mental clarity.';
+  if(v >= 45) msg = '🌳 <strong>Nature champion!</strong> Excellent outdoor time. Fresh air exposure lowers blood pressure and boosts mood.';
+  else if(v >= 20) msg = '🌿 <strong>Good start!</strong> Try to add another <strong>'+(45-v)+' minutes</strong> — even a short evening walk counts!';
+  else if(v > 0) msg = '🚶 <strong>Keep going!</strong> You need <strong>'+(45-v)+' more minutes</strong> outdoors. A walk after meals is a great habit.';
+  document.getElementById('airInsight').innerHTML = '<p>' + msg + '</p>';
+}
+
+function renderAllNS(){
+  renderHydration(); renderSunlight(); renderSleep(); renderAir(); recalcNSScore();
+}
+
+function recalcNSScore(){
+  const hydPct   = Math.min(nsState.hydration / 8, 1);
+  const sunPct   = Math.min(nsState.sunlight / 30, 1);
+  const sleepPct = Math.min(nsState.sleep / 8, 1);
+  const airPct   = Math.min(nsState.air / 45, 1);
+  const score    = Math.round((hydPct + sunPct + sleepPct + airPct) / 4 * 100);
+  document.getElementById('nsScoreNum').textContent = score;
+  const circumference = 263.9;
+  const offset = circumference - (circumference * score / 100);
+  document.getElementById('nsScoreRing').style.strokeDashoffset = offset;
+  let title, msg;
+  if(score === 100){ title = '🏆 Perfect NatureSync Day!'; msg = 'You\'ve hit all your nature targets — hydration, sunlight, sleep & fresh air. Incredible!'; }
+  else if(score >= 75){ title = '🌟 Almost There!'; msg = 'You\'re doing great! Just a little more to complete today\'s NatureSync goals.'; }
+  else if(score >= 50){ title = '🌱 Good Progress'; msg = 'Halfway through your nature goals. Keep logging and you\'ll have a great day!'; }
+  else if(score > 0){ title = '🌤️ Getting Started'; msg = 'Nice — you\'ve begun! Each small habit adds up. Keep logging your nature activities.'; }
+  else { title = 'Start Logging Today'; msg = 'Log your water, sun exposure, sleep and outdoor time to see your NatureSync score.'; }
+  document.getElementById('nsScoreTitle').textContent = title;
+  document.getElementById('nsScoreMsg').textContent = msg;
+  renderNSRemedies();
+}
+
+function renderNSRemedies(){
+  const el = document.getElementById('nsRemedyList');
+  if(!el) return;
+  const remedies = [];
+
+  // Hydration remedies
+  const hyd = nsState.hydration;
+  if(hyd === 0){
+    remedies.push({icon:'💧',color:'#1e40af',bg:'#dbeafe',title:'Start Hydrating Now',desc:'Even mild dehydration causes fatigue and brain fog. Drink a glass of water right now and set an hourly reminder.'});
+  } else if(hyd < 4){
+    remedies.push({icon:'💧',color:'#1e40af',bg:'#dbeafe',title:'Increase Water Intake',desc:'You\'re drinking '+(hyd*250)+'ml but need 2000ml. Try keeping a water bottle at your desk. Add lemon or cucumber for taste.'});
+  } else if(hyd < 8){
+    remedies.push({icon:'💧',color:'#0369a1',bg:'#e0f2fe',title:'Almost at Hydration Goal',desc:''+(8-hyd)+' more glasses to go! Drink a glass before each meal and one after waking — simple ways to hit the target.'});
+  }
+
+  // Sunlight remedies
+  const sun = nsState.sunlight;
+  if(sun === 0){
+    remedies.push({icon:'☀️',color:'#92400e',bg:'#fef9c3',title:'Get Outdoors — Vitamin D Deficiency Risk',desc:'Zero sunlight today. Prolonged deficiency weakens immunity and causes mood dips. Even 5 minutes on your balcony helps right now.'});
+  } else if(sun < 15){
+    remedies.push({icon:'☀️',color:'#92400e',bg:'#fef3c7',title:'Low Sunlight Exposure',desc:'Under 15 min of sun may not synthesize enough Vitamin D. Take a 15-min morning walk to boost serotonin and immune function.'});
+  } else if(sun < 30){
+    remedies.push({icon:'☀️',color:'#b45309',bg:'#fef9c3',title:'Top Up Your Sunlight',desc:'You\'re at '+sun+' min — just '+(30-sun)+' more needed. Eat lunch outside or do your stretches in the sun to finish your goal.'});
+  }
+
+  // Sleep remedies
+  const slp = nsState.sleep;
+  if(slp === 0){
+    remedies.push({icon:'🌙',color:'#6b21a8',bg:'#f3e8ff',title:'No Sleep Logged — Rest is Critical',desc:'Please log your sleep. Chronic sleep deprivation raises cortisol, slows metabolism and impairs memory. Prioritize 7–8 hrs tonight.'});
+  } else if(slp < 5){
+    remedies.push({icon:'🌙',color:'#6b21a8',bg:'#f3e8ff',title:'Critically Low Sleep',desc:'Under 5 hrs seriously impairs cognitive function and hormonal balance. Remedy: skip caffeine after 2 PM and set a wind-down alarm at 9:30 PM tonight.'});
+  } else if(slp < 7){
+    remedies.push({icon:'🌙',color:'#7e22ce',bg:'#faf5ff',title:'Sleep Deficit Detected',desc:'You slept '+slp+' hrs but need 7–8. A consistent bedtime improves sleep quality. Try dimming lights 1 hour before bed and avoiding heavy meals late at night.'});
+  }
+
+  // Fresh air remedies
+  const air = nsState.air;
+  if(air === 0){
+    remedies.push({icon:'🌬️',color:'#166534',bg:'#dcfce7',title:'Go Outside — Indoor Air Can Be Toxic',desc:'Indoor air quality is often 2–5x worse than outdoor. Open windows now and plan a 10-min walk. Fresh air lowers anxiety and sharpens focus.'});
+  } else if(air < 20){
+    remedies.push({icon:'🌬️',color:'#15803d',bg:'#dcfce7',title:'More Outdoor Time Needed',desc:'You\'ve had just '+air+' min outside. A short stroll after dinner adds outdoor time without disrupting your schedule and helps with digestion too.'});
+  }
+
+  // Positive reinforcement when doing great
+  if(hyd >= 8 && sun >= 30 && slp >= 7 && air >= 45){
+    remedies.push({icon:'🏆',color:'#166534',bg:'#f0fdf4',title:'Perfect Day — Keep It Up!',desc:'You\'ve met all NatureSync targets today. Consistency is key — even 3 consecutive days of this routine produces measurable wellness improvements.'});
+  } else if(remedies.length === 0){
+    remedies.push({icon:'🌿',color:'#2d6a4f',bg:'#f0fdf4',title:'Looking Good!',desc:'You\'re on track with your nature habits. Keep logging throughout the day to maintain your NatureSync streak.'});
+  }
+
+  el.innerHTML = remedies.map(r => `
+    <div class="ns-tip-item" style="background:${r.bg};border-radius:10px;padding:.75rem 1rem;margin-bottom:.55rem;border-bottom:none;">
+      <span class="ns-tip-icon">${r.icon}</span>
+      <div class="ns-tip-text"><strong style="color:${r.color}">${r.title}</strong><br>${r.desc}</div>
+    </div>`).join('');
+}
+
+function saveNatureLog(type){
+  const data = getNSData();
+  const today = getTodayKey();
+  if(!data[today]) data[today] = {};
+  data[today][type] = nsState[type];
+  setNSData(data);
+  renderNSStreak(data);
+  showNSToast(type);
+}
+
+function showNSToast(type){
+  const labels = { hydration:'💧 Hydration saved!', sunlight:'☀️ Sunlight logged!', sleep:'🌙 Sleep logged!', air:'🌬️ Outdoor time saved!' };
+  let t = document.getElementById('nsToast');
+  if(!t){ t = document.createElement('div'); t.id='nsToast'; t.className='ns-toast'; document.body.appendChild(t); }
+  t.textContent = labels[type] || '✅ Saved!';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+function renderNSStreak(data){
+  const el = document.getElementById('nsStreak');
+  if(!el) return;
+  const today = new Date();
+  let html = '';
+  for(let i = 6; i >= 0; i--){
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    const dayData = data[key] || {};
+    const complete = (dayData.hydration||0)>=8 && (dayData.sunlight||0)>=30 && (dayData.sleep||0)>=8 && (dayData.air||0)>=45;
+    const isToday = i === 0;
+    const label = ['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()];
+    const cls = isToday ? 'today' : (complete ? 'done' : 'miss');
+    html += `<div class="ns-dot ${cls}" title="${key}">${label}</div>`;
+  }
+  el.innerHTML = html;
 }
 
 init();

@@ -8,7 +8,7 @@
     : 'https://nutrisync-vgjj.onrender.com';
 </script>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <title>NutriSync – Sync Your Meals. Energize Your Life.</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -91,9 +91,9 @@
   .fbot{font-size:.77rem;border-top:1px solid #2d4a32;padding-top:1rem;margin-top:.9rem;}
 
   /* MODALS */
-  .mo{position:fixed;inset:0;background:rgba(10,20,12,.65);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+  .mo{position:fixed;inset:0;background:rgba(10,20,12,.65);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem;overflow-y:auto;}
   .mo.open{display:flex;}
-  .md{background:white;border-radius:22px;padding:2.2rem;width:90%;max-width:400px;position:relative;animation:mIn .3s ease;}
+  .md{background:white;border-radius:22px;padding:2.2rem;width:90%;max-width:400px;position:relative;animation:mIn .3s ease;overflow:hidden;}
   @keyframes mIn{from{opacity:0;transform:scale(.92) translateY(14px);}to{opacity:1;transform:none;}}
   .mc{position:absolute;top:.9rem;right:.9rem;background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray);}
   .md h2{font-family:'Playfair Display',serif;font-size:1.65rem;font-weight:900;margin-bottom:.22rem;}
@@ -116,8 +116,42 @@
   .alert.ok{background:#dcfce7;color:#16a34a;display:block;}
   /* Google One-tap container */
   #g_id_onload{position:fixed;top:80px;right:20px;z-index:2000;}
+
+  /* Google button wrapper — ensures it never overflows modal on mobile */
+  .g-btn-wrap{width:100%;overflow:hidden;margin-bottom:.9rem;display:flex;justify-content:center;}
+  .g-btn-wrap>div{width:100%!important;max-width:100%!important;}
+  .g-btn-wrap iframe{width:100%!important;min-width:unset!important;}
+
+  /* Modal full-width on very small screens */
+  @media(max-width:440px){
+    .md{padding:1.5rem 1.1rem;border-radius:16px;}
+    .md h2{font-size:1.35rem;}
+  }
   @media(max-width:640px){.navl{display:none;}.hstats{gap:1.4rem;}}
-</style>
+
+    /* ═══ INDEX MOBILE ═══ */
+    @media (max-width: 768px) {
+      .nav { padding: .9rem 1.1rem !important; }
+      .navl { display: none !important; }
+      .hero { padding: 5rem 1.2rem 3rem !important; }
+      .hero h1 { font-size: 2rem !important; }
+      .hero p { font-size: 1rem !important; }
+      .hbtns { flex-direction: column !important; align-items: center !important; }
+      .hbtns a { width: 100% !important; max-width: 320px !important; text-align: center !important; }
+      .hstats { gap: 1.5rem !important; flex-wrap: wrap !important; justify-content: center !important; }
+      .features-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
+      .how-grid { grid-template-columns: 1fr 1fr !important; }
+      .reviews-grid { grid-template-columns: 1fr !important; }
+      .footer-links { flex-direction: column !important; gap: .6rem !important; }
+      input, select { font-size: 16px !important; }
+      .modal-panel { padding: 1.5rem 1.2rem !important; border-radius: 20px 20px 0 0 !important; }
+      .modal-overlay { align-items: flex-end !important; }
+    }
+    @supports (padding: env(safe-area-inset-top)) {
+      .nav { padding-top: max(.9rem, env(safe-area-inset-top)) !important; }
+    }
+
+  </style>
 </head>
 <body>
 
@@ -221,7 +255,7 @@
     <p>Login to your NutriSync account.</p>
     <div class="alert" id="lAlert"></div>
     <div id="gLoginBtn" style="display:none">
-      <div id="g_signin_login"></div>
+      <div class="g-btn-wrap"><div id="g_signin_login"></div></div>
       <div class="divider">or use email</div>
     </div>
     <div id="gLoginFallback" class="gbtn" onclick="triggerGoogleLogin('login')">
@@ -243,7 +277,7 @@
     <p>Create your free account.</p>
     <div class="alert" id="sAlert"></div>
     <div id="gSignupBtn" style="display:none">
-      <div id="g_signin_signup"></div>
+      <div class="g-btn-wrap"><div id="g_signin_signup"></div></div>
       <div class="divider">or use email</div>
     </div>
     <div id="gSignupFallback" class="gbtn" onclick="triggerGoogleLogin('signup')">
@@ -344,8 +378,10 @@ async function initGoogleSignIn(){
           client_id: googleClientId,
           callback: handleGoogleSignIn
         });
-        google.accounts.id.renderButton(document.getElementById('g_signin_login'),{theme:'outline',size:'large',width:356,text:'signin_with'});
-        google.accounts.id.renderButton(document.getElementById('g_signin_signup'),{theme:'outline',size:'large',width:356,text:'signup_with'});
+        // Responsive width: fit modal on mobile (max 360, min 240)
+        const mw = Math.min(Math.max(document.querySelector('.md')?.offsetWidth - 44 || 320, 240), 360);
+        google.accounts.id.renderButton(document.getElementById('g_signin_login'),{theme:'outline',size:'large',width:mw,text:'signin_with'});
+        google.accounts.id.renderButton(document.getElementById('g_signin_signup'),{theme:'outline',size:'large',width:mw,text:'signup_with'});
       }
     }
   }catch(e){}
